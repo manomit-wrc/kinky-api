@@ -11,6 +11,7 @@ const userSchema = new Schema({
     phone_number : {type: Number},
     password: { type: String },
     avatar: { type: String },
+    gender: { type: String },
     description: { type: String, default: '' },
     headline: { type: String, default: '' },
     country: { type: Schema.Types.ObjectId, ref: 'Country' },

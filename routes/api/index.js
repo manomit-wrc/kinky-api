@@ -13,9 +13,9 @@ const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb
 
 
 router.post('/signup',  async (req, res) => {
-    User.findOne({ email: req.body.email }).then(user => {
+    User.findOne({ username: req.body.username }).then(user => {
         if (user) {
-         return res.json({ success: false, code: 403, message: 'Email already exists'});
+         return res.json({ success: false, code: 403, message: 'Username already exists'});
         } else {
           const avatar = gravatar.url(req.body.email, {
             s: '200', // Size
@@ -28,6 +28,7 @@ router.post('/signup',  async (req, res) => {
             email: req.body.email,
             avatar,
             password: req.body.password,
+            gender: req.body.gender,
             activation_link
           });
     
@@ -122,7 +123,7 @@ router.post('/signup',  async (req, res) => {
                   
                                               <br/><br/>
                   
-                                              Model Management System Customer Service
+                                             Kinky - AN online dating service
                   
                                           </span>
                   
@@ -146,7 +147,7 @@ router.post('/signup',  async (req, res) => {
                
                   var emailData = {
                       'FromEmail': 'info@wrctpl.com',
-                      'FromName': 'Model Management System',
+                      'FromName': 'Kinky - An online dating service',
                       'Subject': 'Registration confirmation',
                       'Html-part': email_body,
                       'Recipients': [{'Email': req.body.email}]
