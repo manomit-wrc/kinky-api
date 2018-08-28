@@ -3,9 +3,11 @@ const router = express.Router();
 
 const bcrypt = require('bcryptjs');
 const gravatar = require('gravatar');
-
+const passport = require('passport');
 const User = require('../../models/User');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+const secretOrKey = require('../../config/keys').secretOrKey;
 
 //for sending email
 const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb8', 'fde7e8364b2ba00150f43eae0851cc85');
@@ -219,6 +221,64 @@ router.post('/login', (req, res) => {
     });
   });
     
+});
+
+router.post('/change-password',passport.authenticate('jwt', {session : false}),  async (req,res) => {
+  let old_password = req.body.old_password;
+  let new_password = req.body.new_password;
+
+  const user = await User.findById(req.user.id);
+  if(user) {
+    bcrypt.compare(old_password, user.password).then(isMatch => {
+      if (isMatch) {
+        bcrypt.genSalt(10, (err, salt) => {
+          bcrypt.hash(req.body.new_password, salt, (err, hash) => {
+            if (err) throw err;
+            new_password_with_hashing = hash;
+  
+            User.updateOne({
+                _id: req.user.id //matching with table id
+              },{
+                $set: {
+                  password: new_password_with_hashing
+                }
+              }).then(function (result) {
+                if(result) {
+                  return res.json({
+                    success: true,
+                    code:200,
+                    message: "Password changed successfully."
+                  });
+                }
+              });
+          });
+        });
+      } else {
+        return res.json({ success: false, code: 404, message: 'Old password not matched'});
+      }
+    });
+  }
+  else {
+    throw new Error("User not found");
+  }
+
+
+});
+
+router.post('/user-details',passport.authenticate('jwt', {session : false}), async (req, res) => {
+  
+  const user = await User.findById(req.user.id);
+  if(user) {
+    return res.json({
+      success: true,
+      info:user,
+      code: 200
+    });
+  }
+  else {
+    throw new Error("User not found");
+  }
+
 });
 
 router.post('/check-activation', async (req, res) => {
