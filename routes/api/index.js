@@ -5,6 +5,8 @@ const bcrypt = require('bcryptjs');
 const gravatar = require('gravatar');
 const passport = require('passport');
 const User = require('../../models/User');
+const Country = require('../../models/Country');
+const State = require('../../models/State');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const secretOrKey = require('../../config/keys').secretOrKey;
@@ -347,6 +349,197 @@ router.post('/verify-activation', async(req, res) => {
       });
     }
 });
+
+router.get('/Country' , async (req,res) => {
+  var all_country = await Country.find();
+  if(all_country){
+    res.json({
+      status : true,
+      code : 200,
+      data : all_country
+    });
+  }else{
+    res.json({
+      status : false,
+      code : 300,
+      message : "No countries found."
+    });
+  }
+});
+
+router.post('/State' , async (req,res) => {
+  var all_state = await State.find({country:req.body.e});
+  if(all_state){
+    res.json({
+      status : true,
+      code : 200,
+      data : all_state
+    });
+  }else{
+    res.json({
+      status : false,
+      code : 300,
+      message : "No states found."
+    });
+  }
+});
+
+router.post('/alert-update',passport.authenticate('jwt', {session : false}), async (req,res) => {
+  
+  const user = await User.findOne({_id: req.user.id});
+  if(user) {
+    user.alert_setting = req.body.alert_setting;
+    if (user.save()){
+      return res.json({
+        success: true,
+        message:"updated successfull",
+        code: 200
+      });
+    }else{
+      return res.json({
+        success: false,
+        message:"updated failed",
+        code: 300
+      });
+    }
+
+   
+  }
+  else {
+    throw new Error("User not found");
+  }
+});
+router.post('/profile-protect-update',passport.authenticate('jwt', {session : false}), async (req,res) => {
+  
+  const user = await User.findOne({_id: req.user.id});
+  if(user) {
+    user.profile_protection = req.body.profile_setting;
+    if (user.save()){
+      return res.json({
+        success: true,
+        message:"updated successfull",
+        code: 200
+      });
+    }else{
+      return res.json({
+        success: false,
+        message:"updated failed",
+        code: 300
+      });
+    }
+
+   
+  }
+  else {
+    throw new Error("User not found");
+  }
+});
+router.post('/switch-account-update',passport.authenticate('jwt', {session : false}), async (req,res) => {
+  
+  const user = await User.findOne({_id: req.user.id});
+  if(user) {
+    user.switch_account = req.body.switch_account;
+    if (user.save()){
+      return res.json({
+        success: true,
+        message:"updated successfull",
+        code: 200
+      });
+    }else{
+      return res.json({
+        success: false,
+        message:"updated failed",
+        code: 300
+      });
+    }
+
+   
+  }
+  else {
+    throw new Error("User not found");
+  }
+});
+router.post('/delete-account-update',passport.authenticate('jwt', {session : false}), async (req,res) => {
+  
+  const user = await User.findOne({_id: req.user.id});
+  if(user) {
+    user.delete_account = req.body.delete_account;
+    if (user.save()){
+      return res.json({
+        success: true,
+        message:"updated successfull",
+        code: 200
+      });
+    }else{
+      return res.json({
+        success: false,
+        message:"updated failed",
+        code: 300
+      });
+    }
+
+   
+  }
+  else {
+    throw new Error("User not found");
+  }
+});
+router.post('/site-config-update',passport.authenticate('jwt', {session : false}), async (req,res) => {
+  
+  const user = await User.findOne({_id: req.user.id});
+  if(user) {
+    user.mobile = req.body.mobile;
+    user.language = req.body.language;
+    user.timezone = req.body.timezone;
+    if (user.save()){
+      return res.json({
+        success: true,
+        message:"updated successfull",
+        code: 200
+      });
+    }else{
+      return res.json({
+        success: false,
+        message:"updated failed",
+        code: 300
+      });
+    }
+
+   
+  }
+  else {
+    throw new Error("User not found");
+  }
+});
+
+router.post('/introduction_update',passport.authenticate('jwt', {session : false}), async (req,res) => {
+  
+  const user = await User.findOne({_id: req.user.id});
+  if(user) {
+    user.preferred_introduction = req.body.preferred_introduction;
+    user.own_introduction = req.body.own_introduction;
+    if (user.save()){
+      return res.json({
+        success: true,
+        message:"updated successfull",
+        code: 200
+      });
+    }else{
+      return res.json({
+        success: false,
+        message:"updated failed",
+        code: 300
+      });
+    }
+
+   
+  }
+  else {
+    throw new Error("User not found");
+  }
+});
+
+
 
 module.exports = router;
 
