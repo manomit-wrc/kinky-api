@@ -178,6 +178,23 @@ router.post('/signup',  async (req, res) => {
     
 });
 
+router.post('/forgot-password'), async (req,res) => {
+
+    const username = req.body.username;
+    const password = req.body.password;
+
+  // Find user by username
+  User.findOne({ username }).then(user => {
+    // Check for user
+    if (!user) {
+        return res.json({ success: false, code: 404, message: 'Username or Password is wrong.'});
+    }
+
+ 
+
+
+});
+
 
 router.post('/login', (req, res) => {
     const username = req.body.username;
@@ -464,6 +481,7 @@ router.post('/delete-account-update',passport.authenticate('jwt', {session : fal
   const user = await User.findOne({_id: req.user.id});
   if(user) {
     user.delete_account = req.body.delete_account;
+    user.other_delete_reason = req.body.other_delete_reason;
     if (user.save()){
       return res.json({
         success: true,
@@ -518,6 +536,38 @@ router.post('/introduction_update',passport.authenticate('jwt', {session : false
   if(user) {
     user.preferred_introduction = req.body.preferred_introduction;
     user.own_introduction = req.body.own_introduction;
+    if (user.save()){
+      return res.json({
+        success: true,
+        message:"updated successfull",
+        code: 200
+      });
+    }else{
+      return res.json({
+        success: false,
+        message:"updated failed",
+        code: 300
+      });
+    }
+
+   
+  }
+  else {
+    throw new Error("User not found");
+  }
+});
+router.post('/interest-update',passport.authenticate('jwt', {session : false}), async (req,res) => {
+  
+  const user = await User.findOne({_id: req.user.id});
+  if(user) {
+    user.gender = req.body.gender;
+    user.from_age = req.body.from_age;
+    user.to_age = req.body.to_age;
+    user.distance = req.body.distance;
+    user.country = req.body.country;
+    user.state = req.body.state; 
+    user.contactmember = req.body.contactmember; 
+    user.explicit_content = req.body.explicit_content; 
     if (user.save()){
       return res.json({
         success: true,
