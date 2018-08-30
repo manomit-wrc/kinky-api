@@ -17,9 +17,16 @@ const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb
 
 
 router.post('/signup',  async (req, res) => {
-    User.findOne({ username: req.body.username }).then(user => {
+      const current_date = new Date();
+      const new_date = new Date(req.body.yyyy, req.body.mm - 1 , req.body.dd + 1);
+
+      const year_diff = diff_years(current_date,new_date);
+      if(year_diff < 18) {
+        return res.json({ success: false, code: 403, message: 'Must be 18 years or above'});
+      }
+    User.findOne({ $or:[ {'username':req.body.username}, {'email':req.body.email} ] }).then(user => {
         if (user) {
-         return res.json({ success: false, code: 403, message: 'Username already exists'});
+         return res.json({ success: false, code: 403, message: 'Username or email already exists'});
         } else {
           const avatar = gravatar.url(req.body.email, {
             s: '200', // Size
@@ -33,6 +40,9 @@ router.post('/signup',  async (req, res) => {
             avatar,
             password: req.body.password,
             gender: req.body.gender,
+            dd: req.body.dd,
+            mm: req.body.mm,
+            yyyy: req.body.yyyy,
             activation_link
           });
     
@@ -174,8 +184,6 @@ router.post('/signup',  async (req, res) => {
           });
         }
       });
-    
-    
 });
 
 router.post('/forgot-password'), async (req,res) => {
@@ -589,7 +597,14 @@ router.post('/interest-update',passport.authenticate('jwt', {session : false}), 
   }
 });
 
+function diff_years(dt2, dt1) 
+{
 
+var diff =(dt2.getTime() - dt1.getTime()) / 1000;
+  diff /= (60 * 60 * 24);
+return Math.abs(Math.round(diff/365.25));
+  
+}
 
 module.exports = router;
 
