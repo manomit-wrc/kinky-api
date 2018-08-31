@@ -614,16 +614,17 @@ router.post('/delete-account-update',passport.authenticate('jwt', {session : fal
   if(user) {
     user.delete_account = req.body.delete_account;
     user.other_delete_reason = req.body.other_delete_reason;
+    user.status = 0;
     if (user.save()){
       return res.json({
         success: true,
-        message:"updated successfull",
+        message:"Account deleted successfull",
         code: 200
       });
     }else{
       return res.json({
         success: false,
-        message:"updated failed",
+        message:"Account deleted failed",
         code: 300
       });
     }
