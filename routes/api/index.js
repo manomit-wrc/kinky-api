@@ -629,7 +629,7 @@ router.post('/delete-account-update',passport.authenticate('jwt', {session : fal
       });
     }
 
-   
+    
   }
   else {
     throw new Error("User not found");

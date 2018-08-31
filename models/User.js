@@ -20,7 +20,7 @@ const userSchema = new Schema({
     delete_account: { type: Number },
     other_delete_reason: { type: String },
     mobile: { type: Number },
-    from_age: { type: Number },
+    from_age: { type: Number }, 
     to_age: { type: Number },
     distance: { type: Number },
     country: { type: Schema.Types.ObjectId, ref: 'Country' },
