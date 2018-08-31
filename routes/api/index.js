@@ -9,7 +9,9 @@ const Country = require('../../models/Country');
 const State = require('../../models/State');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const Timezone = require('../../models/Timezone');
 const secretOrKey = require('../../config/keys').secretOrKey;
+const Settings = require('../../models/Settings');
 
 //for sending email
 const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb8', 'fde7e8364b2ba00150f43eae0851cc85');
@@ -417,18 +419,26 @@ router.post('/change-password',passport.authenticate('jwt', {session : false}), 
 
 });
 
-router.post('/user-details',passport.authenticate('jwt', {session : false}), async (req, res) => {
+router.post('/user-settings',passport.authenticate('jwt', {session : false}), async (req, res) => {
+
+  const setting = await Settings.findOne({ user: req.user.id });
+  const timezones = await Timezone.find({});
   
-  const user = await User.findById(req.user.id);
-  if(user) {
+  if(setting) {
     return res.json({
       success: true,
-      info:user,
+      info:setting,
+      timezones: timezones,
       code: 200
     });
   }
   else {
-    throw new Error("User not found");
+    return res.json({
+      success: false,
+      info:{},
+      timezones: timezones,
+      code: 403
+    });
   }
 
 });
@@ -533,94 +543,68 @@ router.post('/State' , async (req,res) => {
   }
 });
 
-router.post('/alert-update',passport.authenticate('jwt', {session : false}), async (req,res) => {
+router.post('/alert-update',passport.authenticate('jwt', {session : false}), (req,res) => {
   
-  const user = await User.findOne({_id: req.user.id});
-  if(user) {
-    user.alert_setting = req.body.alert_setting;
-    if (user.save()){
+  try {
+    Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
       return res.json({
         success: true,
         message:"updated successfull",
         code: 200
       });
-    }else{
-      return res.json({
-        success: false,
-        message:"updated failed",
-        code: 300
-      });
-    }
-
-   
+    })
   }
-  else {
+  catch(err) {
+    throw new Error("User not found");
+  }
+
+});
+
+router.post('/profile-protect-update',passport.authenticate('jwt', {session : false}), (req,res) => {
+  try {
+    Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
+      return res.json({
+        success: true,
+        message:"updated successfull",
+        code: 200
+      });
+    })
+  }
+  catch(err) {
     throw new Error("User not found");
   }
 });
-router.post('/profile-protect-update',passport.authenticate('jwt', {session : false}), async (req,res) => {
-  
-  const user = await User.findOne({_id: req.user.id});
-  if(user) {
-    user.profile_protection = req.body.profile_setting;
-    if (user.save()){
+
+router.post('/switch-account-update',passport.authenticate('jwt', {session : false}), (req,res) => {
+  try {
+    Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
       return res.json({
         success: true,
         message:"updated successfull",
         code: 200
       });
-    }else{
-      return res.json({
-        success: false,
-        message:"updated failed",
-        code: 300
-      });
-    }
-
-   
+    } )
   }
-  else {
+  catch(err) {
     throw new Error("User not found");
   }
-});
-router.post('/switch-account-update',passport.authenticate('jwt', {session : false}), async (req,res) => {
   
-  const user = await User.findOne({_id: req.user.id});
-  if(user) {
-    user.switch_account = req.body.switch_account;
-    if (user.save()){
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200
-      });
-    }else{
-      return res.json({
-        success: false,
-        message:"updated failed",
-        code: 300
-      });
-    }
-
-   
-  }
-  else {
-    throw new Error("User not found");
-  }
 });
 router.post('/delete-account-update',passport.authenticate('jwt', {session : false}), async (req,res) => {
   
   const user = await User.findOne({_id: req.user.id});
   if(user) {
-    user.delete_account = req.body.delete_account;
-    user.other_delete_reason = req.body.other_delete_reason;
     user.status = 0;
     if (user.save()){
-      return res.json({
-        success: true,
-        message:"Account deleted successfull",
-        code: 200
-      });
+
+      Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
+        return res.json({
+          success: true,
+          message:"Account deleted successfull",
+          code: 200
+        });
+      })
+
     }else{
       return res.json({
         success: false,
@@ -635,91 +619,55 @@ router.post('/delete-account-update',passport.authenticate('jwt', {session : fal
     throw new Error("User not found");
   }
 });
-router.post('/site-config-update',passport.authenticate('jwt', {session : false}), async (req,res) => {
+
+router.post('/site-config-update',passport.authenticate('jwt', {session : false}), (req,res) => {
   
-  const user = await User.findOne({_id: req.user.id});
-  if(user) {
-    user.mobile = req.body.mobile;
-    user.language = req.body.language;
-    user.timezone = req.body.timezone;
-    if (user.save()){
+  try {
+    Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
       return res.json({
         success: true,
         message:"updated successfull",
         code: 200
       });
-    }else{
-      return res.json({
-        success: false,
-        message:"updated failed",
-        code: 300
-      });
-    }
-
-   
+    })
   }
-  else {
+  catch(err) {
     throw new Error("User not found");
   }
 });
 
 router.post('/introduction_update',passport.authenticate('jwt', {session : false}), async (req,res) => {
   
-  const user = await User.findOne({_id: req.user.id});
-  if(user) {
-    user.preferred_introduction = req.body.preferred_introduction;
-    user.own_introduction = req.body.own_introduction;
-    if (user.save()){
+  try {
+    Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
       return res.json({
         success: true,
         message:"updated successfull",
         code: 200
       });
-    }else{
-      return res.json({
-        success: false,
-        message:"updated failed",
-        code: 300
-      });
-    }
-
-   
+    })
   }
-  else {
+  catch(err) {
     throw new Error("User not found");
   }
+
 });
-router.post('/interest-update',passport.authenticate('jwt', {session : false}), async (req,res) => {
-  
-  const user = await User.findOne({_id: req.user.id});
-  if(user) {
-    user.gender = req.body.gender;
-    user.from_age = req.body.from_age;
-    user.to_age = req.body.to_age;
-    user.distance = req.body.distance;
-    user.country = req.body.country;
-    user.state = req.body.state; 
-    user.contactmember = req.body.contactmember; 
-    user.explicit_content = req.body.explicit_content; 
-    if (user.save()){
+router.post('/interest-update',passport.authenticate('jwt', {session : false}), (req,res) => {
+
+  try {
+    Settings.update({ user: req.user.id }, req.body , { upsert: true, setDefaultsOnInsert: true } , (err, data) => {
       return res.json({
         success: true,
         message:"updated successfull",
         code: 200
-      });
-    }else{
-      return res.json({
-        success: false,
-        message:"updated failed",
-        code: 300
-      });
-    }
-
-   
+      })
+    })
+  
   }
-  else {
+  catch(err) {
     throw new Error("User not found");
   }
+  
 });
 
 router.post('/check-account', async(req, res) => {
@@ -769,6 +717,24 @@ router.post('/activate-account', async(req, res) => {
     return res.json({ success: false, code: 403, message: 'Something is not right. Please try again'})
   }
 })
+
+router.post('/update-instant-message', passport.authenticate('jwt', {session : false}), (req, res) => {
+  try {
+    Settings.update({ user: req.user.id }, req.body , { upsert: true, setDefaultsOnInsert: true } , (err, data) => {
+      return res.json({
+        success: true,
+        message:"updated successfull",
+        code: 200,
+        instant_msg: req.body.instant_msg
+      })
+    })
+  
+  }
+  catch(err) {
+    throw new Error("User not found");
+  }
+})
+
 
 function diff_years(dt2, dt1) 
 {
