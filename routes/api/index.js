@@ -721,6 +721,54 @@ router.post('/interest-update',passport.authenticate('jwt', {session : false}), 
   }
 });
 
+router.post('/check-account', async(req, res) => {
+  const activation_link = req.body.link;
+  const user = await User.findOne({ activation_link });
+  if(user) {
+    if(user.status === 1) {
+      return res.json({ success: false, code: 403, message: 'Your account is already activated'})
+    }
+    else {
+      return res.json({ success: true, code: 200, message: 'Welcome to Kinky - Online dateing application. Click on verify link to continue with this site.'})
+    } 
+  }
+  else {
+    return res.json({ success: false, code: 403, message: 'Something is not right. Please try again'})
+  }
+})
+
+router.post('/activate-account', async(req, res) => {
+  const activation_link = req.body.link;
+  const user = await User.findOne({ activation_link });
+  if(user) {
+    user.status = 1;
+    user.save();
+    const payload = { 
+      id: user._id, 
+      email: user.email, 
+      avatar: user.avatar
+    };
+
+    // Sign Token
+    jwt.sign(
+      payload,
+      secretOrKey,
+      { expiresIn: 60 * 60 },
+      (err, token) => {
+        return res.json({
+          success: true,
+          token: token,
+          info:user,
+          code: 200
+        });
+      }
+    );
+  }
+  else {
+    return res.json({ success: false, code: 403, message: 'Something is not right. Please try again'})
+  }
+})
+
 function diff_years(dt2, dt1) 
 {
 
