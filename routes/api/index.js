@@ -423,11 +423,13 @@ router.post('/user-settings',passport.authenticate('jwt', {session : false}), as
 
   const setting = await Settings.findOne({ user: req.user.id });
   const timezones = await Timezone.find({});
+  const user = await User.findById(req.user.id);
   
   if(setting) {
     return res.json({
       success: true,
       info:setting,
+      user:user,
       timezones: timezones,
       code: 200
     });
