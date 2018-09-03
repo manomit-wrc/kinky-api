@@ -12,6 +12,11 @@ const jwt = require('jsonwebtoken');
 const Timezone = require('../../models/Timezone');
 const secretOrKey = require('../../config/keys').secretOrKey;
 const Settings = require('../../models/Settings');
+const Ethnicity = require('../../models/Ethnicity');
+const HairColor = require('../../models/HairColor');
+const Height = require('../../models/Height');
+const BodyHair = require('../../models/BodyHair');
+const Build = require('../../models/Build');
 
 //for sending email
 const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb8', 'fde7e8364b2ba00150f43eae0851cc85');
@@ -527,6 +532,86 @@ router.get('/Country' , async (req,res) => {
     });
   }
 });
+router.get('/Ethnicity' , async (req,res) => {
+  var all_ethncity = await Ethnicity.find();
+  if(all_ethncity){
+    res.json({
+      status : true,
+      code : 200,
+      data : all_ethncity
+    });
+  }else{
+    res.json({
+      status : false,
+      code : 300,
+      message : "No Ethncity found."
+    });
+  }
+});
+router.get('/Hair' , async (req,res) => {
+  var all_hair = await HairColor.find();
+  if(all_hair){
+    res.json({
+      status : true,
+      code : 200,
+      data : all_hair
+    });
+  }else{
+    res.json({
+      status : false,
+      code : 300,
+      message : "No Hair found."
+    });
+  }
+});
+router.get('/BodyHair' , async (req,res) => {
+  var body_hair = await BodyHair.find();
+  if(body_hair){
+    res.json({
+      status : true,
+      code : 200,
+      data : body_hair
+    });
+  }else{
+    res.json({
+      status : false,
+      code : 300,
+      message : "No Body Hair found."
+    });
+  }
+});
+router.get('/Build' , async (req,res) => {
+  var build = await Build.find();
+  if(build){
+    res.json({
+      status : true,
+      code : 200,
+      data : build
+    });
+  }else{
+    res.json({
+      status : false,
+      code : 300,
+      message : "No Build found."
+    });
+  }
+});
+router.get('/Height' , async (req,res) => {
+  var height = await Height.find();
+  if(height){
+    res.json({
+      status : true,
+      code : 200,
+      data : height
+    });
+  }else{
+    res.json({
+      status : false,
+      code : 300,
+      message : "No Height found."
+    });
+  }
+});
 
 router.post('/State' , async (req,res) => {
   var all_state = await State.find({country:req.body.e});
@@ -611,6 +696,35 @@ router.post('/delete-account-update',passport.authenticate('jwt', {session : fal
       return res.json({
         success: false,
         message:"Account deleted failed",
+        code: 300
+      });
+    }
+
+    
+  }
+  else {
+    throw new Error("User not found");
+  }
+});
+router.post('/update-personal-headline',passport.authenticate('jwt', {session : false}), async (req,res) => {
+  const user = await User.findOne({_id: req.user.id});
+  if(user) {
+    user.headline = req.body.headline;
+    user.description = req.body.description;
+    if (user.save()){
+
+     
+        return res.json({
+          success: true,
+          message:"updated successfull",
+          code: 200
+        });
+      
+
+    }else{
+      return res.json({
+        success: false,
+        message:"updated failed",
         code: 300
       });
     }
@@ -736,6 +850,16 @@ router.post('/update-instant-message', passport.authenticate('jwt', {session : f
     throw new Error("User not found");
   }
 })
+
+/*  router.get('/test-upload', (req, res) => {
+const arr = ['Shaved', 'Smooth', 'Trimmed', 'Natural', 'Wild', 'I will tell you later'];
+  for(let i=0; i<arr.length; i++) {
+    const eth = new BodyHair({
+      name: arr[i]
+    }).save();
+  }
+  res.send("End")
+});  */
 
 
 function diff_years(dt2, dt1) 
