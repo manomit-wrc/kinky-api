@@ -737,6 +737,36 @@ router.post('/update-instant-message', passport.authenticate('jwt', {session : f
   }
 })
 
+router.post('/update-auto-reply-email', passport.authenticate('jwt', { session : false }), (req, res) => {
+  try {
+    Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
+      return res.json({
+        success: true,
+        message:"updated successfull",
+        code: 200
+      })
+    })
+  }
+  catch(err) {
+    throw new Error("User not found");
+  }
+})
+
+router.post('/update-promotion', passport.authenticate('jwt', { session : false }), (req, res) => {
+  try {
+    Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
+      return res.json({
+        success: true,
+        message:"updated successfull",
+        code: 200
+      })
+    })
+  }
+  catch(err) {
+    throw new Error("User not found");
+  }
+})
+
 
 function diff_years(dt2, dt1) 
 {

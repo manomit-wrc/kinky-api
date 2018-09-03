@@ -23,7 +23,12 @@ const SettingSchema = new Schema({
     contactmember: { type: Number },
     explicit_content: { type: Boolean,default:true },
     profile_setting: { type: Number },
-    instant_msg: { type: Number }
+    instant_msg: { type: Number },
+    auto_reply_subject: { type: String },
+    auto_reply_body: { type: String },
+    enable_auto_reply: { type: Boolean },
+    promotion: { type: String },
+    promotion_chk: { type: Boolean }
 
 });
 
