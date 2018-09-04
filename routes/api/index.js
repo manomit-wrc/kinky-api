@@ -880,6 +880,55 @@ router.post('/update-promotion', passport.authenticate('jwt', { session : false 
     throw new Error("User not found");
   }
 })
+
+router.post('/personal-details-update', passport.authenticate('jwt', { session : false }), async (req, res) => {
+  const user = await User.findOne({_id: req.user.id});
+  if(user) {
+    user.dd = req.body.data.dd;
+    user.mm = req.body.data.mm;
+    user.yyyy = req.body.data.yyyy;
+    user.gender = req.body.data.gender;
+    user.looking_for = req.body.data.looking_for; 
+    user.timezone = req.body.data.timezone;
+    user.sexuality = req.body.data.sexuality;
+    user.country = req.body.data.country;
+    user.state = req.body.data.state;
+    user.ethnicity = req.body.data.ethnicity;
+    user.height =req.body.data.height;
+    user.build = req.body.data.build;
+    user.hair =req.body.data.hair;
+    user.body_hair = req.body.data.body_hair;
+    user.body_decoration = req.body.data.body_decoration;
+    user.drink = req.body.data.drink;
+    user.drugs = req.body.data.drugs;
+    user.smoke = req.body.data.smoke;
+    user.size = req.body.data.size;
+    user.safe_sex = req.body.data.safe_sex;
+    user.travel_arrangment = req.body.data.travel_arrangment;
+    user.purpose = req.body.data.purpose;
+    if (user.save()){
+
+        return res.json({
+          success: true,
+          message:"updated successfull",
+          code: 200
+        });
+      
+
+    }else{
+      return res.json({
+        success: false,
+        message:"updated failed",
+        code: 300
+      });
+    }
+
+    
+  }
+  else {
+    throw new Error("User not found");
+  }
+})
 /*  router.get('/test-upload', (req, res) => {
 const arr = ['Shaved', 'Smooth', 'Trimmed', 'Natural', 'Wild', 'I will tell you later'];
   for(let i=0; i<arr.length; i++) {
