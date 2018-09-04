@@ -17,6 +17,7 @@ const HairColor = require('../../models/HairColor');
 const Height = require('../../models/Height');
 const BodyHair = require('../../models/BodyHair');
 const Build = require('../../models/Build');
+const PasswordChangeRequests = require('../../models/PasswordChangeRequests');
 
 //for sending email
 const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb8', 'fde7e8364b2ba00150f43eae0851cc85');
@@ -200,8 +201,14 @@ router.post('/forgot-password', (req, res) => {
     console.log(user);
     // Check for user
     if (!user) {
-        return res.json({ success: false, code: 404, message: 'Username or Password is wrong.'});
+        return res.json({ success: false, code: 404, message: 'Username or Email is wrong.'});
     }else{
+      const activation_link = crypto.randomBytes(64).toString('hex');
+      const passwdReq = new PasswordChangeRequests({
+        email: user.email,
+        activation_id: activation_link
+      }).save();
+
       var email_body = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
                   <html xmlns="http://www.w3.org/1999/xhtml">
@@ -271,7 +278,7 @@ router.post('/forgot-password', (req, res) => {
                   
                                               <br/><br/>
                   
-                                              <a href="${process.env.FRONT_END_URL}/verify/${user.activation_link}">Click here to verify</a>
+                                              <a href="${process.env.FRONT_END_URL}/forgot-password/${activation_link}">Click here to verify</a>
                                               <br/>
               
                                               
@@ -311,7 +318,7 @@ router.post('/forgot-password', (req, res) => {
                   var emailData = {
                       'FromEmail': 'info@wrctpl.com',
                       'FromName': 'Kinky - An online dating service',
-                      'Subject': 'Registration confirmation',
+                      'Subject': 'Forgot Password',
                       'Html-part': email_body,
                       'Recipients': [{'Email': user.email}]
                   };
@@ -320,8 +327,7 @@ router.post('/forgot-password', (req, res) => {
                     
                     res.json({
                       success: true, 
-                      code: 200, 
-                      message: 'Registration completed successfully. Please check your email to verify your account'
+                      code: 200
                     });
                     
                   }
@@ -878,6 +884,78 @@ router.post('/update-promotion', passport.authenticate('jwt', { session : false 
   }
   catch(err) {
     throw new Error("User not found");
+  }
+})
+router.post('/check-password-request', async(req, res) => {
+  const checkPasswd = await PasswordChangeRequests.findOne({ activation_id: req.body.link, status: 0 });
+  if(checkPasswd) {
+    const currentDate = new Date();
+    if(checkPasswd.requested_date.getDate() - currentDate.getDate() > 0) {
+      return res.json({
+        success: false,
+        code: 403,
+        message: 'Your link has expired. Please try to request again.'
+      })
+    }
+    else {
+      return res.json({
+        success: true,
+        code: 200,
+        message: ''
+      })
+    }
+  }
+  else {
+    return res.json({
+      success: false,
+      code: 403,
+      message: 'Your link has expired. Please try to request again.'
+    })
+  }
+  
+})
+
+router.post('/update-password-request', async (req, res) => {
+  const checkPasswd = await PasswordChangeRequests.findOne({ activation_id: req.body.link, status: 0 });
+  if(checkPasswd) {
+    bcrypt.genSalt(10, (err, salt) => {
+      bcrypt.hash(req.body.password, salt, (err, hash) => {
+        if (err) throw err;
+        new_password_with_hashing = hash;
+
+        User.updateOne({
+            email: checkPasswd.email 
+          },{
+            $set: {
+              password: new_password_with_hashing
+            }
+          }).then(function (result) {
+            PasswordChangeRequests.updateOne({
+              email: checkPasswd.email
+            }, {
+              $set: {
+                status: 1
+              }
+            }).then(data => {
+              if(result) {
+                return res.json({
+                  success: true,
+                  code:200,
+                  message: "Password changed successfully."
+                });
+              }
+            })
+            
+          });
+      });
+    });
+  }
+  else {
+    return res.json({
+      success: false,
+      code: 403,
+      message: 'Your link has expired. Please try to request again.'
+    })
   }
 })
 /*  router.get('/test-upload', (req, res) => {
