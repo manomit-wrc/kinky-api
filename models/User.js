@@ -25,7 +25,7 @@ const userSchema = new Schema({
     ethnicity: { type: Schema.Types.ObjectId, ref: 'Ethnicity'},
     height: { type: Schema.Types.ObjectId, ref: 'Height' },
     build: { type: Schema.Types.ObjectId, ref: 'Build' },
-    hair: { type: Schema.Types.ObjectId, ref: 'Hair' },
+    hair: { type: Schema.Types.ObjectId, ref: 'HairColor' },
     body_hair: { type: Schema.Types.ObjectId, ref: 'BodyHair' },
     body_decoration: { type: String, default: '' },
     drink: { type: String, default: '' },
