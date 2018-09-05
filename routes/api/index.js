@@ -366,6 +366,7 @@ router.post('/login', (req, res) => {
           secretOrKey,
           { expiresIn: 60 * 60 },
           (err, token) => {
+            delete user.activation_link;
             return res.json({
               success: true,
               token: token,
@@ -427,7 +428,6 @@ router.post('/change-password',passport.authenticate('jwt', {session : false}), 
 router.post('/user-settings',passport.authenticate('jwt', {session : false}), async (req, res) => {
 
   const setting = await Settings.findOne({ user: req.user.id });
-  const timezones = await Timezone.find({});
   const user = await User.findById(req.user.id);
   
   if(setting) {
@@ -435,7 +435,6 @@ router.post('/user-settings',passport.authenticate('jwt', {session : false}), as
       success: true,
       info:setting,
       user:user,
-      timezones: timezones,
       code: 200
     });
   }
@@ -443,7 +442,6 @@ router.post('/user-settings',passport.authenticate('jwt', {session : false}), as
     return res.json({
       success: false,
       info:{},
-      timezones: timezones,
       code: 403
     });
   }
@@ -628,6 +626,26 @@ router.post('/State' , async (req,res) => {
       message : "No states found."
     });
   }
+});
+
+router.post('/load-masters', async( req, res) => {
+  var all_country = await Country.find();
+  var all_ethncity = await Ethnicity.find();
+  var all_hair = await HairColor.find();
+  var build = await Build.find();
+  var height = await Height.find();
+  const timezones = await Timezone.find({});
+
+  res.json({
+    status: true,
+    code: 200,
+    country: all_country,
+    ethnicity: all_ethncity,
+    hair: all_hair,
+    build: build,
+    height: height,
+    timezones: timezones
+  })
 });
 
 router.post('/alert-update',passport.authenticate('jwt', {session : false}), (req,res) => {
