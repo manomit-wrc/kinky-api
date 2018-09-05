@@ -427,8 +427,9 @@ router.post('/change-password',passport.authenticate('jwt', {session : false}), 
 
 router.post('/user-settings',passport.authenticate('jwt', {session : false}), async (req, res) => {
 
-  const setting = await Settings.findOne({ user: req.user.id });
-  const user = await User.findById(req.user.id);
+  const setting = await Settings.findOne({ user: req.user.id });  
+  const user = await User.findById(req.user.id).populate('country').populate('state').populate('height').populate('build').populate('hair');
+
   
   if(setting) {
     return res.json({
