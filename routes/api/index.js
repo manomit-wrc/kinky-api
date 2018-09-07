@@ -430,13 +430,14 @@ router.post('/user-settings',passport.authenticate('jwt', {session : false}), as
 
   const setting = await Settings.findOne({ user: req.user.id });  
   const user = await User.findById(req.user.id).populate('country').populate('state').populate('height').populate('build').populate('hair');
-
+  const timezones = await Timezone.find({});
   
   if(setting) {
     return res.json({
       success: true,
       info:setting,
       user:user,
+      timezones: timezones,
       code: 200
     });
   }
@@ -444,7 +445,8 @@ router.post('/user-settings',passport.authenticate('jwt', {session : false}), as
     return res.json({
       success: false,
       info:{},
-      code: 403
+      code: 403,
+      timezones: timezones
     });
   }
 
@@ -737,6 +739,7 @@ router.post('/update-personal-headline',passport.authenticate('jwt', {session : 
         return res.json({
           success: true,
           message:"updated successfull",
+          info: user,
           code: 200
         });
       
@@ -745,6 +748,7 @@ router.post('/update-personal-headline',passport.authenticate('jwt', {session : 
       return res.json({
         success: false,
         message:"updated failed",
+        info: user,
         code: 300
       });
     }
@@ -976,6 +980,7 @@ router.post('/personal-details-update', passport.authenticate('jwt', { session :
         return res.json({
           success: true,
           message:"updated successfull",
+          info: user,
           code: 200
         });
       
