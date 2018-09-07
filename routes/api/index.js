@@ -17,7 +17,8 @@ const HairColor = require('../../models/HairColor');
 const Height = require('../../models/Height');
 const BodyHair = require('../../models/BodyHair');
 const Build = require('../../models/Build');
-
+const multer  = require('multer');
+const im = require('imagemagick');
 //for sending email
 const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb8', 'fde7e8364b2ba00150f43eae0851cc85');
 //end
@@ -899,6 +900,49 @@ router.post('/update-promotion', passport.authenticate('jwt', { session : false 
     throw new Error("User not found");
   }
 })
+
+ 
+  
+ router.post('/image-upload', function(request, response) {
+
+  var storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      console.log(req.body)
+      cb(null, ('/public/uploads/' +req.body.imageArr) )
+    },
+    filename: function (req, file, cb) {
+      cb(null, file.fieldname + '-' + Date.now())
+    }
+  })
+
+//var upload = multer({ dest: ('hidden/images/slip/' + req.body.classId) }).single('file')
+var upload =multer({storage: storage}).array(request.body.imageArr, 5);
+console.log(upload)
+upload(req,res,function(err) {
+  if(err) {
+      return handleError(err, res);
+  }
+  console.log("done upload---")
+  res.json({"status":"completed"});
+});
+  
+  
+});
+ 
+
+
+/* router.post('/image-upload',passport.authenticate('jwt', { session : false }), (req, res) => {
+  upload(req,res,function(err) {
+    //console.log(req.body);
+    //console.log(req.files);
+  if(err) {
+      console.log("sd",err);
+      
+        return res.end("Error uploading file.");
+    } 
+    res.end("File is uploaded");
+});
+}); */
 
 router.post('/personal-details-update', passport.authenticate('jwt', { session : false }), async (req, res) => {
   const user = await User.findOne({_id: req.user.id});
