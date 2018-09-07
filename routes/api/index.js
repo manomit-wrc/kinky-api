@@ -17,6 +17,7 @@ const HairColor = require('../../models/HairColor');
 const Height = require('../../models/Height');
 const BodyHair = require('../../models/BodyHair');
 const Build = require('../../models/Build');
+const PasswordChangeRequests = require('../../models/PasswordChangeRequests');
 
 //for sending email
 const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb8', 'fde7e8364b2ba00150f43eae0851cc85');
@@ -197,11 +198,15 @@ router.post('/forgot-password', (req, res) => {
 
   // Find user by username or email
   User.findOne({ $or:[ {'username':req.body.email}, {'email':req.body.email} ] }).then(user => {
-    console.log(user);
-    // Check for user
+    
     if (!user) {
-        return res.json({ success: false, code: 404, message: 'Username or Password is wrong.'});
+        return res.json({ success: false, code: 404, message: 'Username or email not matched.'});
     }else{
+      const activation_link = crypto.randomBytes(64).toString('hex');
+      const passwdReq = new PasswordChangeRequests({
+        email: req.body.email,
+        activation_id: activation_link
+      }).save();
       var email_body = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
                   <html xmlns="http://www.w3.org/1999/xhtml">
@@ -210,7 +215,7 @@ router.post('/forgot-password', (req, res) => {
                   
                       <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
                   
-                      <title>Forgot Password Link</title>
+                      <title>Forgot Password</title>
                   
                       <style>
                   
@@ -252,7 +257,7 @@ router.post('/forgot-password', (req, res) => {
                   
                                       <td align="left" valign="top" colspan="2" style="border-bottom: 1px solid #CCCCCC; padding: 20px 0 10px 0;">
                   
-                                          <span style="font-size: 18px; font-weight: normal;">Registration confirmation</span>
+                                          <span style="font-size: 18px; font-weight: normal;">Forgot Password</span>
                   
                                       </td>
                   
@@ -266,12 +271,12 @@ router.post('/forgot-password', (req, res) => {
                   
                                           <span style="font-size: 12px; line-height: 1.5; color: #333333;">
                   
-                                            Hi ${user.username}, <br/>    
+                                            
                                             Please click on the below link to change your password
                   
                                               <br/><br/>
                   
-                                              <a href="${process.env.FRONT_END_URL}/verify/${user.activation_link}">Click here to verify</a>
+                                              <a href="${process.env.FRONT_END_URL}/forgot-password/${activation_link}">Click here to verify</a>
                                               <br/>
               
                                               
@@ -311,7 +316,7 @@ router.post('/forgot-password', (req, res) => {
                   var emailData = {
                       'FromEmail': 'info@wrctpl.com',
                       'FromName': 'Kinky - An online dating service',
-                      'Subject': 'Registration confirmation',
+                      'Subject': 'Forgot Password',
                       'Html-part': email_body,
                       'Recipients': [{'Email': user.email}]
                   };
@@ -321,7 +326,7 @@ router.post('/forgot-password', (req, res) => {
                     res.json({
                       success: true, 
                       code: 200, 
-                      message: 'Registration completed successfully. Please check your email to verify your account'
+                      message: 'Please check your email to change password'
                     });
                     
                   }
@@ -953,6 +958,74 @@ router.post('/personal-details-update', passport.authenticate('jwt', { session :
   }
   else {
     throw new Error("User not found");
+  }
+})
+
+router.post('/check-password-request', async(req, res) => {
+  const passwdReq = await PasswordChangeRequests.findOne({ activation_id: req.body.link, status: 0 });
+  if(passwdReq) {
+    const reqDate = passwdReq.requested_date.getTime();
+    const currentDate = new Date().getTime();
+    const diffDays = parseInt((currentDate - reqDate) / (1000 * 60 * 60 * 24));
+    if(diffDays > 0) {
+      return res.json({
+        success: false,
+        code: 403,
+        message: 'Link is expired. Please try again'
+      })
+    }
+    else {
+      return res.json({
+        success: true,
+        code: 200,
+        message: ''
+      })
+    }
+  }
+  else {
+    return res.json({
+      success: false,
+      code: 403,
+      message: 'Link is expired. Please try again'
+    })
+  }
+})
+
+router.post('/update-password-request', async (req, res) => {
+  const passwdReq = await PasswordChangeRequests.findOne({ activation_id: req.body.link, status: 0 });
+  if(passwdReq) {
+    const user = await User.findOne({ email: passwdReq.email });
+    bcrypt.genSalt(10, (err, salt) => {
+      bcrypt.hash(req.body.password, salt, (err, hash) => {
+        if (err) throw err;
+        new_password_with_hashing = hash;
+
+        User.updateOne({
+            _id: user._id
+          },{
+            $set: {
+              password: new_password_with_hashing
+            }
+          }).then(function (result) {
+            if(result) {
+              passwdReq.status = 1;
+              passwdReq.save();
+              return res.json({
+                success: true,
+                code:200,
+                message: "Password updated successfully."
+              });
+            }
+          });
+      });
+    });
+  }
+  else {
+    return res.json({
+      success: false,
+      code: 403,
+      message: 'Link is expired. Please try again'
+    })
   }
 })
 /*  router.get('/test-upload', (req, res) => {
