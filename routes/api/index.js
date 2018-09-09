@@ -364,22 +364,25 @@ router.post('/login', (req, res) => {
           email: user.email, 
           avatar: user.avatar
         }; // Create JWT Payload
-
-        // Sign Token
-        jwt.sign(
-          payload,
-          secretOrKey,
-          { expiresIn: 60 * 60 },
-          (err, token) => {
-            delete user.activation_link;
-            return res.json({
-              success: true,
-              token: token,
-              info:user,
-              code: 200
-            });
-          }
-        );
+        Settings.findOne({ user: user._id })
+          .then(settings => {
+            jwt.sign(
+              payload,
+              secretOrKey,
+              { expiresIn: 60 * 60 },
+              (err, token) => {
+                delete user.activation_link;
+                return res.json({
+                  success: true,
+                  token: token,
+                  info:user,
+                  settings: settings,
+                  code: 200
+                });
+              }
+            );
+          })
+        
       } else {
         return res.json({ success: false, code: 404, message: 'Email or Password is wrong.'});
       }
@@ -526,9 +529,9 @@ router.get('/Country' , async (req,res) => {
   var all_country = await Country.find();
   if(all_country){
     res.json({
-      status : true,
-      code : 200,
-      data : all_country
+      status: true,
+      code: 200,
+      data: all_country
     });
   }else{
     res.json({
@@ -642,6 +645,8 @@ router.post('/load-masters', async( req, res) => {
   var all_hair = await HairColor.find();
   var build = await Build.find();
   var height = await Height.find();
+  var states = await State.find();
+  var body_hairs = await BodyHair.find();
   const timezones = await Timezone.find({});
 
   res.json({
@@ -652,7 +657,9 @@ router.post('/load-masters', async( req, res) => {
     hair: all_hair,
     build: build,
     height: height,
-    timezones: timezones
+    timezones: timezones,
+    states: states,
+    body_hairs: body_hairs
   })
 });
 
@@ -660,11 +667,16 @@ router.post('/alert-update',passport.authenticate('jwt', {session : false}), (re
   
   try {
     Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200
-      });
+      Settings.findOne({ user: req.user.id })
+        .then(data => {
+          return res.json({
+            success: true,
+            message:"updated successfull",
+            code: 200,
+            settings: data
+          });
+        })
+      
     })
   }
   catch(err) {
@@ -676,11 +688,16 @@ router.post('/alert-update',passport.authenticate('jwt', {session : false}), (re
 router.post('/profile-protect-update',passport.authenticate('jwt', {session : false}), (req,res) => {
   try {
     Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200
-      });
+      Settings.findOne({ user: req.user.id })
+        .then(data => {
+          return res.json({
+            success: true,
+            message:"updated successfull",
+            code: 200,
+            settings: data
+          });
+        })
+      
     })
   }
   catch(err) {
@@ -691,11 +708,16 @@ router.post('/profile-protect-update',passport.authenticate('jwt', {session : fa
 router.post('/switch-account-update',passport.authenticate('jwt', {session : false}), (req,res) => {
   try {
     Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200
-      });
+      Settings.findOne({ user: req.user.id })
+        .then(data => {
+          return res.json({
+            success: true,
+            message:"updated successfull",
+            code: 200,
+            settings: data
+          });
+        })
+      
     } )
   }
   catch(err) {
@@ -768,11 +790,16 @@ router.post('/site-config-update',passport.authenticate('jwt', {session : false}
   
   try {
     Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200
-      });
+      Settings.findOne({ user: req.user.id })
+        .then(data => {
+          return res.json({
+            success: true,
+            message:"updated successfull",
+            code: 200,
+            settings: data
+          });
+        })
+      
     })
   }
   catch(err) {
@@ -784,11 +811,16 @@ router.post('/introduction_update',passport.authenticate('jwt', {session : false
   
   try {
     Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200
-      });
+      Settings.findOne({ user: req.user.id })
+        .then(data => {
+          return res.json({
+            success: true,
+            message:"updated successfull",
+            code: 200,
+            settings: data
+          });
+        })
+     
     })
   }
   catch(err) {
@@ -797,14 +829,18 @@ router.post('/introduction_update',passport.authenticate('jwt', {session : false
 
 });
 router.post('/interest-update',passport.authenticate('jwt', {session : false}), (req,res) => {
-
+  
   try {
     Settings.update({ user: req.user.id }, req.body , { upsert: true, setDefaultsOnInsert: true } , (err, data) => {
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200
+      Settings.findOne({ user: req.user.id }).then(data => {
+        return res.json({
+          success: true,
+          message:"updated successfull",
+          code: 200,
+          settings: data
+        })
       })
+      
     })
   
   }
@@ -865,12 +901,16 @@ router.post('/activate-account', async(req, res) => {
 router.post('/update-instant-message', passport.authenticate('jwt', {session : false}), (req, res) => {
   try {
     Settings.update({ user: req.user.id }, req.body , { upsert: true, setDefaultsOnInsert: true } , (err, data) => {
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200,
-        instant_msg: req.body.instant_msg
-      })
+      Settings.findOne({ user: req.user.id })
+        .then(data => {
+          return res.json({
+            success: true,
+            message:"updated successfull",
+            code: 200,
+            settings: data
+          })
+        })
+      
     })
   
   }
@@ -882,11 +922,15 @@ router.post('/update-instant-message', passport.authenticate('jwt', {session : f
 router.post('/update-auto-reply-email', passport.authenticate('jwt', { session : false }), (req, res) => {
   try {
     Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200
-      })
+      Settings.findOne({ user: req.user.id })
+        .then(data => {
+          return res.json({
+            success: true,
+            message:"updated successfull",
+            code: 200,
+            settings: data
+          })
+        })
     })
   }
   catch(err) {
@@ -897,11 +941,15 @@ router.post('/update-auto-reply-email', passport.authenticate('jwt', { session :
 router.post('/update-promotion', passport.authenticate('jwt', { session : false }), (req, res) => {
   try {
     Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200
-      })
+      Settings.findOne({ user: req.user.id })
+        .then(data => {
+          return res.json({
+            success: true,
+            message:"updated successfull",
+            code: 200,
+            settings: data
+          })
+        })
     })
   }
   catch(err) {
