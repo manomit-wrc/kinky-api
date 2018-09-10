@@ -17,8 +17,11 @@ const HairColor = require('../../models/HairColor');
 const Height = require('../../models/Height');
 const BodyHair = require('../../models/BodyHair');
 const Build = require('../../models/Build');
+const UserActivity = require ('../../models/UserActivity')
 const multer  = require('multer');
 const im = require('imagemagick');
+const PasswordChangeRequests = require('../../models/PasswordChangeRequests');
+
 //for sending email
 const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb8', 'fde7e8364b2ba00150f43eae0851cc85');
 //end
@@ -198,11 +201,15 @@ router.post('/forgot-password', (req, res) => {
 
   // Find user by username or email
   User.findOne({ $or:[ {'username':req.body.email}, {'email':req.body.email} ] }).then(user => {
-    console.log(user);
-    // Check for user
+    
     if (!user) {
-        return res.json({ success: false, code: 404, message: 'Username or Password is wrong.'});
+        return res.json({ success: false, code: 404, message: 'Username or email not matched.'});
     }else{
+      const activation_link = crypto.randomBytes(64).toString('hex');
+      const passwdReq = new PasswordChangeRequests({
+        email: req.body.email,
+        activation_id: activation_link
+      }).save();
       var email_body = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
                   <html xmlns="http://www.w3.org/1999/xhtml">
@@ -211,7 +218,7 @@ router.post('/forgot-password', (req, res) => {
                   
                       <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
                   
-                      <title>Forgot Password Link</title>
+                      <title>Forgot Password</title>
                   
                       <style>
                   
@@ -253,7 +260,7 @@ router.post('/forgot-password', (req, res) => {
                   
                                       <td align="left" valign="top" colspan="2" style="border-bottom: 1px solid #CCCCCC; padding: 20px 0 10px 0;">
                   
-                                          <span style="font-size: 18px; font-weight: normal;">Registration confirmation</span>
+                                          <span style="font-size: 18px; font-weight: normal;">Forgot Password</span>
                   
                                       </td>
                   
@@ -267,12 +274,12 @@ router.post('/forgot-password', (req, res) => {
                   
                                           <span style="font-size: 12px; line-height: 1.5; color: #333333;">
                   
-                                            Hi ${user.username}, <br/>    
+                                            
                                             Please click on the below link to change your password
                   
                                               <br/><br/>
                   
-                                              <a href="${process.env.FRONT_END_URL}/verify/${user.activation_link}">Click here to verify</a>
+                                              <a href="${process.env.FRONT_END_URL}/forgot-password/${activation_link}">Click here to verify</a>
                                               <br/>
               
                                               
@@ -312,7 +319,7 @@ router.post('/forgot-password', (req, res) => {
                   var emailData = {
                       'FromEmail': 'info@wrctpl.com',
                       'FromName': 'Kinky - An online dating service',
-                      'Subject': 'Registration confirmation',
+                      'Subject': 'Forgot Password',
                       'Html-part': email_body,
                       'Recipients': [{'Email': user.email}]
                   };
@@ -322,7 +329,7 @@ router.post('/forgot-password', (req, res) => {
                     res.json({
                       success: true, 
                       code: 200, 
-                      message: 'Registration completed successfully. Please check your email to verify your account'
+                      message: 'Please check your email to change password'
                     });
                     
                   }
@@ -337,6 +344,8 @@ router.post('/forgot-password', (req, res) => {
 
 
 router.post('/login', (req, res) => {
+
+  console.log(req.body.ip);
     const username = req.body.username;
     const password = req.body.password;
 
@@ -360,22 +369,32 @@ router.post('/login', (req, res) => {
           email: user.email, 
           avatar: user.avatar
         }; // Create JWT Payload
+        Settings.findOne({ user: user._id })
+          .then(settings => {
 
-        // Sign Token
-        jwt.sign(
-          payload,
-          secretOrKey,
-          { expiresIn: 60 * 60 },
-          (err, token) => {
-            delete user.activation_link;
-            return res.json({
-              success: true,
-              token: token,
-              info:user,
-              code: 200
+            const userActivity = new UserActivity({
+              user : user._id,
+              status : 1,
+              ip : req.body.ip
             });
-          }
-        );
+            userActivity.save();
+            jwt.sign(
+              payload,
+              secretOrKey,
+              { expiresIn: 60 * 60 },
+              (err, token) => {
+                delete user.activation_link;
+                return res.json({
+                  success: true,
+                  token: token,
+                  info:user,
+                  settings: settings,
+                  code: 200
+                });
+              }
+            );
+          })
+        
       } else {
         return res.json({ success: false, code: 404, message: 'Email or Password is wrong.'});
       }
@@ -383,6 +402,34 @@ router.post('/login', (req, res) => {
   });
     
 });
+
+router.post('/logout', passport.authenticate('jwt', {session : false}),  async (req,res) => {
+
+const user = await User.findById(req.user.id);
+  if(user) {
+
+    UserActivity.status = 0;
+    if (UserActivity.save()){
+                    return res.json({
+                    success: true,
+                    code:200,
+                    message: "Logout successfully."
+                  });
+    }
+    
+
+  }else {
+    throw new Error("User not found");
+  }
+
+    
+});
+router.post('/fetch-online-users', passport.authenticate('jwt', {session : false}), async(req,res) => {
+
+  const user = await UserActivity.findById(req.user.id)
+
+});
+
 
 router.post('/change-password',passport.authenticate('jwt', {session : false}),  async (req,res) => {
   let old_password = req.body.old_password;
@@ -522,9 +569,9 @@ router.get('/Country' , async (req,res) => {
   var all_country = await Country.find();
   if(all_country){
     res.json({
-      status : true,
-      code : 200,
-      data : all_country
+      status: true,
+      code: 200,
+      data: all_country
     });
   }else{
     res.json({
@@ -638,6 +685,8 @@ router.post('/load-masters', async( req, res) => {
   var all_hair = await HairColor.find();
   var build = await Build.find();
   var height = await Height.find();
+  var states = await State.find();
+  var body_hairs = await BodyHair.find();
   const timezones = await Timezone.find({});
 
   res.json({
@@ -648,7 +697,9 @@ router.post('/load-masters', async( req, res) => {
     hair: all_hair,
     build: build,
     height: height,
-    timezones: timezones
+    timezones: timezones,
+    states: states,
+    body_hairs: body_hairs
   })
 });
 
@@ -656,11 +707,16 @@ router.post('/alert-update',passport.authenticate('jwt', {session : false}), (re
   
   try {
     Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200
-      });
+      Settings.findOne({ user: req.user.id })
+        .then(data => {
+          return res.json({
+            success: true,
+            message:"updated successfull",
+            code: 200,
+            settings: data
+          });
+        })
+      
     })
   }
   catch(err) {
@@ -672,11 +728,16 @@ router.post('/alert-update',passport.authenticate('jwt', {session : false}), (re
 router.post('/profile-protect-update',passport.authenticate('jwt', {session : false}), (req,res) => {
   try {
     Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200
-      });
+      Settings.findOne({ user: req.user.id })
+        .then(data => {
+          return res.json({
+            success: true,
+            message:"updated successfull",
+            code: 200,
+            settings: data
+          });
+        })
+      
     })
   }
   catch(err) {
@@ -687,11 +748,16 @@ router.post('/profile-protect-update',passport.authenticate('jwt', {session : fa
 router.post('/switch-account-update',passport.authenticate('jwt', {session : false}), (req,res) => {
   try {
     Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200
-      });
+      Settings.findOne({ user: req.user.id })
+        .then(data => {
+          return res.json({
+            success: true,
+            message:"updated successfull",
+            code: 200,
+            settings: data
+          });
+        })
+      
     } )
   }
   catch(err) {
@@ -764,11 +830,16 @@ router.post('/site-config-update',passport.authenticate('jwt', {session : false}
   
   try {
     Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200
-      });
+      Settings.findOne({ user: req.user.id })
+        .then(data => {
+          return res.json({
+            success: true,
+            message:"updated successfull",
+            code: 200,
+            settings: data
+          });
+        })
+      
     })
   }
   catch(err) {
@@ -780,11 +851,16 @@ router.post('/introduction_update',passport.authenticate('jwt', {session : false
   
   try {
     Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200
-      });
+      Settings.findOne({ user: req.user.id })
+        .then(data => {
+          return res.json({
+            success: true,
+            message:"updated successfull",
+            code: 200,
+            settings: data
+          });
+        })
+     
     })
   }
   catch(err) {
@@ -793,14 +869,18 @@ router.post('/introduction_update',passport.authenticate('jwt', {session : false
 
 });
 router.post('/interest-update',passport.authenticate('jwt', {session : false}), (req,res) => {
-
+  
   try {
     Settings.update({ user: req.user.id }, req.body , { upsert: true, setDefaultsOnInsert: true } , (err, data) => {
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200
+      Settings.findOne({ user: req.user.id }).then(data => {
+        return res.json({
+          success: true,
+          message:"updated successfull",
+          code: 200,
+          settings: data
+        })
       })
+      
     })
   
   }
@@ -861,12 +941,16 @@ router.post('/activate-account', async(req, res) => {
 router.post('/update-instant-message', passport.authenticate('jwt', {session : false}), (req, res) => {
   try {
     Settings.update({ user: req.user.id }, req.body , { upsert: true, setDefaultsOnInsert: true } , (err, data) => {
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200,
-        instant_msg: req.body.instant_msg
-      })
+      Settings.findOne({ user: req.user.id })
+        .then(data => {
+          return res.json({
+            success: true,
+            message:"updated successfull",
+            code: 200,
+            settings: data
+          })
+        })
+      
     })
   
   }
@@ -878,11 +962,15 @@ router.post('/update-instant-message', passport.authenticate('jwt', {session : f
 router.post('/update-auto-reply-email', passport.authenticate('jwt', { session : false }), (req, res) => {
   try {
     Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200
-      })
+      Settings.findOne({ user: req.user.id })
+        .then(data => {
+          return res.json({
+            success: true,
+            message:"updated successfull",
+            code: 200,
+            settings: data
+          })
+        })
     })
   }
   catch(err) {
@@ -893,11 +981,15 @@ router.post('/update-auto-reply-email', passport.authenticate('jwt', { session :
 router.post('/update-promotion', passport.authenticate('jwt', { session : false }), (req, res) => {
   try {
     Settings.update({ user: req.user.id }, req.body, { upsert: true, setDefaultsOnInsert: true }, (err, data) => {
-      return res.json({
-        success: true,
-        message:"updated successfull",
-        code: 200
-      })
+      Settings.findOne({ user: req.user.id })
+        .then(data => {
+          return res.json({
+            success: true,
+            message:"updated successfull",
+            code: 200,
+            settings: data
+          })
+        })
     })
   }
   catch(err) {
@@ -906,32 +998,6 @@ router.post('/update-promotion', passport.authenticate('jwt', { session : false 
 })
 
  
-  
- router.post('/image-upload', function(request, response) {
-
-  var storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      console.log(req.body)
-      cb(null, ('/public/uploads/' +req.body.imageArr) )
-    },
-    filename: function (req, file, cb) {
-      cb(null, file.fieldname + '-' + Date.now())
-    }
-  })
-
-//var upload = multer({ dest: ('hidden/images/slip/' + req.body.classId) }).single('file')
-var upload =multer({storage: storage}).array(request.body.imageArr, 5);
-console.log(upload)
-upload(req,res,function(err) {
-  if(err) {
-      return handleError(err, res);
-  }
-  console.log("done upload---")
-  res.json({"status":"completed"});
-});
-  
-  
-});
  
 
 
@@ -997,6 +1063,74 @@ router.post('/personal-details-update', passport.authenticate('jwt', { session :
   }
   else {
     throw new Error("User not found");
+  }
+})
+
+router.post('/check-password-request', async(req, res) => {
+  const passwdReq = await PasswordChangeRequests.findOne({ activation_id: req.body.link, status: 0 });
+  if(passwdReq) {
+    const reqDate = passwdReq.requested_date.getTime();
+    const currentDate = new Date().getTime();
+    const diffDays = parseInt((currentDate - reqDate) / (1000 * 60 * 60 * 24));
+    if(diffDays > 0) {
+      return res.json({
+        success: false,
+        code: 403,
+        message: 'Link is expired. Please try again'
+      })
+    }
+    else {
+      return res.json({
+        success: true,
+        code: 200,
+        message: ''
+      })
+    }
+  }
+  else {
+    return res.json({
+      success: false,
+      code: 403,
+      message: 'Link is expired. Please try again'
+    })
+  }
+})
+
+router.post('/update-password-request', async (req, res) => {
+  const passwdReq = await PasswordChangeRequests.findOne({ activation_id: req.body.link, status: 0 });
+  if(passwdReq) {
+    const user = await User.findOne({ email: passwdReq.email });
+    bcrypt.genSalt(10, (err, salt) => {
+      bcrypt.hash(req.body.password, salt, (err, hash) => {
+        if (err) throw err;
+        new_password_with_hashing = hash;
+
+        User.updateOne({
+            _id: user._id
+          },{
+            $set: {
+              password: new_password_with_hashing
+            }
+          }).then(function (result) {
+            if(result) {
+              passwdReq.status = 1;
+              passwdReq.save();
+              return res.json({
+                success: true,
+                code:200,
+                message: "Password updated successfully."
+              });
+            }
+          });
+      });
+    });
+  }
+  else {
+    return res.json({
+      success: false,
+      code: 403,
+      message: 'Link is expired. Please try again'
+    })
   }
 })
 /*  router.get('/test-upload', (req, res) => {
