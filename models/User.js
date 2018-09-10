@@ -37,6 +37,11 @@ const userSchema = new Schema({
     age_range: [{ type: String }],
     travel_arrangment: { type: String, default: '' },
     purpose: { type: String, default: '' },
+    images: [
+        {
+            type: String
+        }
+    ],
     status: { type: Number, default: 0},
     activation_link: { type: String },
     created_at : { type: Date, default : Date.now()}
