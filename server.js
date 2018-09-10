@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 
 const passport = require("passport");
 const path = require("path");
+const cors = require('cors');
 require('dotenv').config({path: 'variables.env'});
 const dbURI = require("./config/keys").mongoURI;
 
@@ -15,21 +16,21 @@ const api = require('./routes/api/index');
 
 const app = express();
 
-const allowCrossDomain = function(req, res, next) {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+// const allowCrossDomain = function(req, res, next) {
+//     res.header('Access-Control-Allow-Origin', '*');
+//     res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
+//     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-    // intercept OPTIONS method
-    if ('OPTIONS' == req.method) {
-        res.send(200);
-    }
-    else {
-        next();
-    }
-};
+//     // intercept OPTIONS method
+//     if ('OPTIONS' == req.method) {
+//         res.send(200);
+//     }
+//     else {
+//         next();
+//     }
+// };
 
-app.use(allowCrossDomain);
+app.use(cors());
 
 mongoose.Promise = global.Promise;
 
