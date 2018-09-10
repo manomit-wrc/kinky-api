@@ -17,6 +17,9 @@ const HairColor = require('../../models/HairColor');
 const Height = require('../../models/Height');
 const BodyHair = require('../../models/BodyHair');
 const Build = require('../../models/Build');
+const UserActivity = require ('../../models/UserActivity')
+const multer  = require('multer');
+const im = require('imagemagick');
 const PasswordChangeRequests = require('../../models/PasswordChangeRequests');
 
 //for sending email
@@ -341,6 +344,8 @@ router.post('/forgot-password', (req, res) => {
 
 
 router.post('/login', (req, res) => {
+
+  console.log(req.body.ip);
     const username = req.body.username;
     const password = req.body.password;
 
@@ -366,6 +371,13 @@ router.post('/login', (req, res) => {
         }; // Create JWT Payload
         Settings.findOne({ user: user._id })
           .then(settings => {
+
+            const userActivity = new UserActivity({
+              user : user._id,
+              status : 1,
+              ip : req.body.ip
+            });
+            userActivity.save();
             jwt.sign(
               payload,
               secretOrKey,
@@ -390,6 +402,34 @@ router.post('/login', (req, res) => {
   });
     
 });
+
+router.post('/logout', passport.authenticate('jwt', {session : false}),  async (req,res) => {
+
+const user = await User.findById(req.user.id);
+  if(user) {
+
+    UserActivity.status = 0;
+    if (UserActivity.save()){
+                    return res.json({
+                    success: true,
+                    code:200,
+                    message: "Logout successfully."
+                  });
+    }
+    
+
+  }else {
+    throw new Error("User not found");
+  }
+
+    
+});
+router.post('/fetch-online-users', passport.authenticate('jwt', {session : false}), async(req,res) => {
+
+  const user = await UserActivity.findById(req.user.id)
+
+});
+
 
 router.post('/change-password',passport.authenticate('jwt', {session : false}),  async (req,res) => {
   let old_password = req.body.old_password;
@@ -956,6 +996,23 @@ router.post('/update-promotion', passport.authenticate('jwt', { session : false 
     throw new Error("User not found");
   }
 })
+
+ 
+ 
+
+
+/* router.post('/image-upload',passport.authenticate('jwt', { session : false }), (req, res) => {
+  upload(req,res,function(err) {
+    //console.log(req.body);
+    //console.log(req.files);
+  if(err) {
+      console.log("sd",err);
+      
+        return res.end("Error uploading file.");
+    } 
+    res.end("File is uploaded");
+});
+}); */
 
 router.post('/personal-details-update', passport.authenticate('jwt', { session : false }), async (req, res) => {
   const user = await User.findOne({_id: req.user.id});
