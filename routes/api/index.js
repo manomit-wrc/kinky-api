@@ -403,13 +403,15 @@ router.post('/login', (req, res) => {
     
 });
 
-router.post('/logout', passport.authenticate('jwt', {session : false}),  async (req,res) => {
+router.post('/logout', passport.authenticate('jwt', {session : false}), async(req,res) => {
 
-const user = await User.findById(req.user.id);
+
+const user = await UserActivity.find({user:req.user.id,status:1});
   if(user) {
+console.log(user);
 
-    UserActivity.status = 0;
-    if (UserActivity.save()){
+    user[0].status = 0;
+    if (user[0].save()){
                     return res.json({
                     success: true,
                     code:200,
@@ -422,11 +424,20 @@ const user = await User.findById(req.user.id);
     throw new Error("User not found");
   }
 
-    
 });
+
 router.post('/fetch-online-users', passport.authenticate('jwt', {session : false}), async(req,res) => {
 
-  const user = await UserActivity.findById(req.user.id)
+  const user = await UserActivity.find({'status':1}).populate('user');
+  if(user){
+    return res.json({
+      success: true,
+      code:200,
+      user: user
+    });
+  }else{
+    throw new Error("User not found");
+  }
 
 });
 

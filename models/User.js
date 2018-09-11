@@ -14,7 +14,7 @@ const userSchema = new Schema({
     password: { type: String },
     avatar: { type: String },
     gender: { type: String },
-    looking_for:  { type: String },
+    looking_for:  [{ type: String }],
     timezone: { type: String },
     sexuality: { type: String },
     country: { type: Schema.Types.ObjectId, ref: 'Country' },
@@ -27,7 +27,7 @@ const userSchema = new Schema({
     build: { type: Schema.Types.ObjectId, ref: 'Build' },
     hair: { type: Schema.Types.ObjectId, ref: 'HairColor' },
     body_hair: { type: Schema.Types.ObjectId, ref: 'BodyHair' },
-    body_decoration: { type: String, default: '' },
+    body_decoration: [{ type: String }],
     drink: { type: String, default: '' },
     drugs: { type: String, default: '' },
     smoke: { type: String, default: '' },
@@ -35,7 +35,7 @@ const userSchema = new Schema({
     safe_sex: { type: String, default: '' },
     interested_in: [{ type: String }],
     age_range: [{ type: String }],
-    travel_arrangment: { type: String, default: '' },
+    travel_arrangment: [{ type: String}],
     purpose: { type: String, default: '' },
     images: [
         {
