@@ -598,7 +598,7 @@ router.post('/load-masters', async( req, res) => {
   res.json({
     status: true,
     code: 200,
-    country: all_country,
+    countries: all_country,
     ethnicity: all_ethncity,
     hair: all_hair,
     build: build,
@@ -925,7 +925,7 @@ router.post('/update-promotion', passport.authenticate('jwt', { session : false 
 
 router.post('/personal-details-update', passport.authenticate('jwt', { session : false }), async (req, res) => {
   const user = await User.findOne({_id: req.user.id});
-  console.log(req.body);
+  
   if(user) {
     user.dd = req.body.data.dd;
     user.mm = req.body.data.mm;
