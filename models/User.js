@@ -42,7 +42,8 @@ const userSchema = new Schema({
             type: String
         }
     ],
-    status: { type: Number, default: 0},
+    status: { type: Number, default: 1},
+    email_verified: { type: Number, default: 0},
     activation_link: { type: String },
     created_at : { type: Date, default : Date.now()}
 

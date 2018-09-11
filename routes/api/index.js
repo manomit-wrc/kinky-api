@@ -44,7 +44,7 @@ router.post('/signup',  async (req, res) => {
             r: 'pg', // Rating
             d: 'mm' // Default
         });
-          const activation_link = crypto.randomBytes(64).toString('hex');
+          
           const newUser = new User({
             username: req.body.username,
             email: req.body.email,
@@ -53,8 +53,7 @@ router.post('/signup',  async (req, res) => {
             gender: req.body.gender,
             dd: req.body.dd,
             mm: req.body.mm,
-            yyyy: req.body.yyyy,
-            activation_link
+            yyyy: req.body.yyyy
           });
     
           bcrypt.genSalt(10, (err, salt) => {
@@ -64,129 +63,29 @@ router.post('/signup',  async (req, res) => {
               newUser
                 .save()
                 .then(user => {
-                  var email_body = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-                  <html xmlns="http://www.w3.org/1999/xhtml">
-                  
-                  <head>
-                  
-                      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-                  
-                      <title>Registration confirmation</title>
-                  
-                      <style>
-                  
-                          body {
-                  
-                              background-color: #FFFFFF; padding: 0; margin: 0;
-                  
-                          }
-                  
-                      </style>
-                  
-                  </head>
-                  
-                  <body style="background-color: #FFFFFF; padding: 0; margin: 0;">
-                  
-                  <table border="0" cellpadding="0" cellspacing="10" height="100%" bgcolor="#FFFFFF" width="100%" style="max-width: 650px;" id="bodyTable">
-                  
-                      <tr>
-                  
-                          <td align="center" valign="top">
-                  
-                              <table border="0" cellpadding="0" cellspacing="0" width="100%" id="emailContainer" style="font-family:Arial; color: #333333;">
-                  
-                                  <!-- Logo -->
-                  
-                                  <tr>
-                  
-                                      <td align="left" valign="top" colspan="2" style="border-bottom: 1px solid #CCCCCC; padding-bottom: 10px;">
-                  
-                                          
-                  
-                                      </td>
-                  
-                                  </tr>
-                  
-                                  <!-- Title -->
-                  
-                                  <tr>
-                  
-                                      <td align="left" valign="top" colspan="2" style="border-bottom: 1px solid #CCCCCC; padding: 20px 0 10px 0;">
-                  
-                                          <span style="font-size: 18px; font-weight: normal;">Registration confirmation</span>
-                  
-                                      </td>
-                  
-                                  </tr>
-                  
-                                  <!-- Messages -->
-                  
-                                  <tr>
-                  
-                                      <td align="left" valign="top" colspan="2" style="padding-top: 10px;">
-                  
-                                          <span style="font-size: 12px; line-height: 1.5; color: #333333;">
-                  
-                                            Hi ${user.username}, <br/>    
-                                            Please click on the below link to verify your email
-                  
-                                              <br/><br/>
-                  
-                                              <a href="${process.env.FRONT_END_URL}/verify/${user.activation_link}">Click here to verify</a>
-                                              <br/>
-              
-                                              
-                  
-                                              <br/><br/>
-                  
-                                              We recommend that you keep your password secure and not share it with anyone.If you feel your password has been compromised, you can change it by going to your Change password page and clicking on the "Change Password" link.
-                  
-                                              <br/><br/>
-                  
-                                              If you need help, or you have any other questions, feel free to email info@wrctpl.com, or call customer service toll-free at +91-1234567890.
-                  
-                                              <br/><br/>
-                  
-                                             Kinky - AN online dating service
-                  
-                                          </span>
-                  
-                                      </td>
-                  
-                                  </tr>
-                  
-                              </table>
-                  
-                          </td>
-                  
-                      </tr>
-                  
-                  </table>
-                  
-                  </body>
-                  
-                  </html> `;
-              
-                  var sendEmail = Mailjet.post('send');
-               
-                  var emailData = {
-                      'FromEmail': 'info@wrctpl.com',
-                      'FromName': 'Kinky - An online dating service',
-                      'Subject': 'Registration confirmation',
-                      'Html-part': email_body,
-                      'Recipients': [{'Email': req.body.email}]
-                  };
-                  
-                  if(sendEmail.request(emailData)) {
-                    
-                    res.json({
-                      success: true, 
-                      code: 200, 
-                      message: 'Registration completed successfully. Please check your email to verify your account'
-                    });
-                    
-                  }
+                  const payload = { 
+                    id: user._id, 
+                    email: user.email, 
+                    avatar: user.avatar
+                  }; // Create JWT Payload
+                  Settings.findOne({ user: user._id })
+                    .then(settings => {
+                      jwt.sign(
+                        payload,
+                        secretOrKey,
+                        { expiresIn: 60 * 60 },
+                        (err, token) => {
+                          
+                          return res.json({
+                            success: true,
+                            token: token,
+                            info:user,
+                            settings: settings,
+                            code: 200
+                          });
+                        }
+                      );
+                    })
                 })
                 .catch(err => {
                   throw new Error("Something is not right. Please try again.");
@@ -405,24 +304,20 @@ router.post('/login', (req, res) => {
 
 router.post('/logout', passport.authenticate('jwt', {session : false}), async(req,res) => {
 
-
-const user = await UserActivity.find({user:req.user.id,status:1});
-  if(user) {
-console.log(user);
-
-    user[0].status = 0;
-    if (user[0].save()){
-                    return res.json({
-                    success: true,
-                    code:200,
-                    message: "Logout successfully."
-                  });
-    }
-    
-
-  }else {
-    throw new Error("User not found");
+UserActivity.updateOne({
+  user:req.user.id,
+  status:1
+},{
+  $set: {
+    status: 0
   }
+}).then(user => {
+  return res.json({
+    success: true,
+    code:200,
+    message: "Logout successfully."
+  });
+})
 
 });
 
@@ -905,11 +800,11 @@ router.post('/check-account', async(req, res) => {
   const activation_link = req.body.link;
   const user = await User.findOne({ activation_link });
   if(user) {
-    if(user.status === 1) {
-      return res.json({ success: false, code: 403, message: 'Your account is already activated'})
+    if(user.email_verified === 1) {
+      return res.json({ success: false, code: 403, message: 'Your account is already verified'})
     }
     else {
-      return res.json({ success: true, code: 200, message: 'Welcome to Kinky - Online dateing application. Click on verify link to continue with this site.'})
+      return res.json({ success: true, code: 200, message: 'Welcome to Kinky - Online dateing application. Click on verify button to continue with this site.'})
     } 
   }
   else {
@@ -921,7 +816,7 @@ router.post('/activate-account', async(req, res) => {
   const activation_link = req.body.link;
   const user = await User.findOne({ activation_link });
   if(user) {
-    user.status = 1;
+    user.email_verified = 1;
     user.save();
     const payload = { 
       id: user._id, 
@@ -929,20 +824,23 @@ router.post('/activate-account', async(req, res) => {
       avatar: user.avatar
     };
 
-    // Sign Token
-    jwt.sign(
-      payload,
-      secretOrKey,
-      { expiresIn: 60 * 60 },
-      (err, token) => {
-        return res.json({
-          success: true,
-          token: token,
-          info:user,
-          code: 200
-        });
-      }
-    );
+    Settings.findOne({ user: user._id })
+      .then(settings => {
+        jwt.sign(
+          payload,
+          secretOrKey,
+          { expiresIn: 60 * 60 },
+          (err, token) => {
+            return res.json({
+              success: true,
+              token: token,
+              info:user,
+              settings: settings,
+              code: 200
+            });
+          }
+        );
+      })
   }
   else {
     return res.json({ success: false, code: 403, message: 'Something is not right. Please try again'})
@@ -1027,6 +925,7 @@ router.post('/update-promotion', passport.authenticate('jwt', { session : false 
 
 router.post('/personal-details-update', passport.authenticate('jwt', { session : false }), async (req, res) => {
   const user = await User.findOne({_id: req.user.id});
+  console.log(req.body);
   if(user) {
     user.dd = req.body.data.dd;
     user.mm = req.body.data.mm;
@@ -1153,6 +1052,137 @@ const arr = ['Shaved', 'Smooth', 'Trimmed', 'Natural', 'Wild', 'I will tell you 
   }
   res.send("End")
 });  */
+
+router.post('/verify-email', passport.authenticate('jwt', { session : false }), async (req, res) => {
+  const user = await User.findById(req.user.id);
+  const activation_link = crypto.randomBytes(64).toString('hex');
+  user.activation_link = activation_link;
+  user.save();
+
+  var email_body = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+                  <html xmlns="http://www.w3.org/1999/xhtml">
+                  
+                  <head>
+                  
+                      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+                  
+                      <title>Registration confirmation</title>
+                  
+                      <style>
+                  
+                          body {
+                  
+                              background-color: #FFFFFF; padding: 0; margin: 0;
+                  
+                          }
+                  
+                      </style>
+                  
+                  </head>
+                  
+                  <body style="background-color: #FFFFFF; padding: 0; margin: 0;">
+                  
+                  <table border="0" cellpadding="0" cellspacing="10" height="100%" bgcolor="#FFFFFF" width="100%" style="max-width: 650px;" id="bodyTable">
+                  
+                      <tr>
+                  
+                          <td align="center" valign="top">
+                  
+                              <table border="0" cellpadding="0" cellspacing="0" width="100%" id="emailContainer" style="font-family:Arial; color: #333333;">
+                  
+                                  <!-- Logo -->
+                  
+                                  <tr>
+                  
+                                      <td align="left" valign="top" colspan="2" style="border-bottom: 1px solid #CCCCCC; padding-bottom: 10px;">
+                  
+                                          
+                  
+                                      </td>
+                  
+                                  </tr>
+                  
+                                  <!-- Title -->
+                  
+                                  <tr>
+                  
+                                      <td align="left" valign="top" colspan="2" style="border-bottom: 1px solid #CCCCCC; padding: 20px 0 10px 0;">
+                  
+                                          <span style="font-size: 18px; font-weight: normal;">Email verification</span>
+                  
+                                      </td>
+                  
+                                  </tr>
+                  
+                                  <!-- Messages -->
+                  
+                                  <tr>
+                  
+                                      <td align="left" valign="top" colspan="2" style="padding-top: 10px;">
+                  
+                                          <span style="font-size: 12px; line-height: 1.5; color: #333333;">
+                  
+                                            Hi ${user.username}, <br/>    
+                                            Please click on the below link to verify your email
+                  
+                                              <br/><br/>
+                  
+                                              <a href="${process.env.FRONT_END_URL}/verify/${activation_link}">Click here to verify</a>
+                                              <br/>
+              
+                                              
+                  
+                                              <br/><br/>
+                  
+                                              We recommend that you keep your password secure and not share it with anyone.If you feel your password has been compromised, you can change it by going to your Change password page and clicking on the "Change Password" link.
+                  
+                                              <br/><br/>
+                  
+                                              If you need help, or you have any other questions, feel free to email info@wrctpl.com, or call customer service toll-free at +91-1234567890.
+                  
+                                              <br/><br/>
+                  
+                                             Kinky - AN online dating service
+                  
+                                          </span>
+                  
+                                      </td>
+                  
+                                  </tr>
+                  
+                              </table>
+                  
+                          </td>
+                  
+                      </tr>
+                  
+                  </table>
+                  
+                  </body>
+                  
+                  </html> `;
+              
+        var sendEmail = Mailjet.post('send');
+      
+        var emailData = {
+            'FromEmail': 'info@wrctpl.com',
+            'FromName': 'Kinky - An online dating service',
+            'Subject': 'Email verification',
+            'Html-part': email_body,
+            'Recipients': [{'Email': user.email}]
+        };
+        
+        if(sendEmail.request(emailData)) {
+          
+          res.json({
+            success: true, 
+            code: 200, 
+            message: 'Please check your email to verify your account.'
+          });
+          
+        }
+})
 
 
 function diff_years(dt2, dt1) 
