@@ -22,6 +22,8 @@ const multer  = require('multer');
 const im = require('imagemagick');
 const PasswordChangeRequests = require('../../models/PasswordChangeRequests');
 
+const CountryList = require('../../config/countries.json');
+
 //for sending email
 const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb8', 'fde7e8364b2ba00150f43eae0851cc85');
 //end
@@ -591,7 +593,6 @@ router.post('/load-masters', async( req, res) => {
   var all_hair = await HairColor.find();
   var build = await Build.find();
   var height = await Height.find();
-  var states = await State.find();
   var body_hairs = await BodyHair.find();
   const timezones = await Timezone.find({});
 
@@ -604,7 +605,6 @@ router.post('/load-masters', async( req, res) => {
     build: build,
     height: height,
     timezones: timezones,
-    states: states,
     body_hairs: body_hairs
   })
 });
@@ -1184,6 +1184,50 @@ router.post('/verify-email', passport.authenticate('jwt', { session : false }), 
         }
 })
 
+router.get('/load-json', (req, res) => {
+  const states = search_states(CountryList, "India");
+  console.log(states);
+  console.log(req.connection.remoteAddress);
+  res.send("Loaded");
+})
+
+router.get('/load-geo', (req, res) => {
+  var Request = require("request");
+  Request.get("https://jsonip.com/", (error, response, body) => {
+    if(error) {
+        return console.dir(error);
+    }
+    const data = JSON.parse(body);
+    console.log(data.ip);
+});
+})
+
+router.post('/load-location', (req, res) => {
+  var Request = require("request");
+  var iplocation = require('iplocation');
+  Request.get("https://jsonip.com/", (error, response, body) => {
+    if(error) {
+        return console.dir(error);
+    }
+    const data = JSON.parse(body);
+    iplocation(data.ip, (error, response) => {
+      return res.json({
+        country: response.country_name,
+        city: response.city
+      })
+    })
+  });
+  
+})
+
+router.post('/load-cities', (req, res) => {
+  const cities = search_states(CountryList, req.body.country);
+  
+  return res.json({
+    cities: cities
+  });
+})
+
 
 function diff_years(dt2, dt1) 
 {
@@ -1192,6 +1236,12 @@ var diff =(dt2.getTime() - dt1.getTime()) / 1000;
   diff /= (60 * 60 * 24);
 return Math.abs(Math.round(diff/365.25));
   
+}
+
+var search_states = function(countries, country) {
+  for(let i in countries) {
+    if(i === country ) return countries[i]
+  }
 }
 
 module.exports = router;
