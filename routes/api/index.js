@@ -72,21 +72,34 @@ router.post('/signup',  async (req, res) => {
                   }; // Create JWT Payload
                   Settings.findOne({ user: user._id })
                     .then(settings => {
-                      jwt.sign(
-                        payload,
-                        secretOrKey,
-                        { expiresIn: 60 * 60 },
-                        (err, token) => {
-                          
-                          return res.json({
-                            success: true,
-                            token: token,
-                            info:user,
-                            settings: settings,
-                            code: 200
-                          });
-                        }
-                      );
+
+                       const userActivity = new UserActivity({
+                        user : user._id,
+                        status : 1,
+                        ip : req.body.ip
+                      });
+                      userActivity.save();
+
+                     UserActivity.find({'status':1 , 'user':{$ne:user._id}}).count(function(err,countData){
+
+                    jwt.sign(
+                    payload,
+                    secretOrKey,
+                    { expiresIn: 60 * 60 },
+                    (err, token) => {
+                      delete user.activation_link;
+                      return res.json({
+                        success: true,
+                        token: token,
+                        info:user,
+                        settings: settings,
+                        count: countData,
+                        code: 200
+                      });
+              }
+            );
+
+            });
                     })
                 })
                 .catch(err => {
@@ -244,6 +257,23 @@ router.post('/forgot-password', (req, res) => {
 });
 
 
+
+router.post('/count-online-user' ,passport.authenticate('jwt', {session : false}), async(req,res) => {
+
+   UserActivity.find({'status':1 , 'user':{$ne:req.user.id}}).count(function(err,countData){
+
+                return res.json({
+                  success: true,
+                  count: countData,
+                  code: 200
+                });
+            
+
+            });
+
+});
+
+
 router.post('/login', (req, res) => {
 
   console.log(req.body.ip);
@@ -279,7 +309,10 @@ router.post('/login', (req, res) => {
               ip : req.body.ip
             });
             userActivity.save();
-            jwt.sign(
+
+             UserActivity.find({'status':1 , 'user':{$ne:user._id}}).count(function(err,countData){
+
+              jwt.sign(
               payload,
               secretOrKey,
               { expiresIn: 60 * 60 },
@@ -290,10 +323,14 @@ router.post('/login', (req, res) => {
                   token: token,
                   info:user,
                   settings: settings,
+                  count: countData,
                   code: 200
                 });
               }
             );
+
+            });
+           
           })
         
       } else {
@@ -325,7 +362,10 @@ UserActivity.updateOne({
 
 router.post('/fetch-online-users', passport.authenticate('jwt', {session : false}), async(req,res) => {
 
-  const user = await UserActivity.find({'status':1}).populate('user');
+
+
+
+  const user = await UserActivity.find({'status':1 , 'user': { $ne: req.user.id }}).populate('user');
   if(user){
     return res.json({
       success: true,
@@ -334,7 +374,7 @@ router.post('/fetch-online-users', passport.authenticate('jwt', {session : false
     });
   }else{
     throw new Error("User not found");
-  }
+  } 
 
 });
 
