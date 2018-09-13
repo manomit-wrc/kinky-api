@@ -39,7 +39,9 @@ const userSchema = new Schema({
     purpose: { type: String, default: '' },
     images: [
         {
-            type: String
+            url: { type: String },
+            altTag: { type: String },
+            access: { type: String, default: 'Public'}
         }
     ],
     status: { type: Number, default: 1},

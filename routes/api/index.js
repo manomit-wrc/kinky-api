@@ -1268,6 +1268,34 @@ router.post('/load-cities', (req, res) => {
   });
 })
 
+router.post('/upload-profile-image', passport.authenticate('jwt', { session : false }), (req, res) => {
+  const imgName = req.body.img_name.split("/");
+  var info = {
+    url: req.body.img_link,
+    altTag: imgName[1]
+  };
+
+  User.findByIdAndUpdate(
+    req.user.id,
+    {$push: {images: info}},
+    {safe: true, upsert: true},
+    (err, data) => {
+     
+      User.findById(req.user.id).then(user => {
+        
+        return res.json({
+          success: true,
+          code: 200,
+          info: user
+        });
+      })
+      
+    }
+  )
+
+  
+})
+
 
 function diff_years(dt2, dt1) 
 {
