@@ -1295,6 +1295,33 @@ router.post('/upload-profile-image', passport.authenticate('jwt', { session : fa
 
   
 })
+router.post('/upload-profile-video', passport.authenticate('jwt', { session : false }), (req, res) => {
+  const videoName = req.body.video_name.split("/");
+  var info = {
+    url: req.body.video_link,
+    altTag: videoName[1]
+  };
+
+  User.findByIdAndUpdate(
+    req.user.id,
+    {$push: {videos: info}},
+    {safe: true, upsert: true},
+    (err, data) => {
+     
+      User.findById(req.user.id).then(user => {
+        
+        return res.json({
+          success: true,
+          code: 200,
+          info: user
+        });
+      })
+      
+    }
+  )
+
+  
+})
 
 
 function diff_years(dt2, dt1) 

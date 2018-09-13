@@ -44,6 +44,13 @@ const userSchema = new Schema({
             access: { type: String, default: 'Public'}
         }
     ],
+    videos: [
+        {
+            url: { type: String },
+            altTag: { type: String },
+            access: { type: String, default: 'Public'}
+        }
+    ],
     status: { type: Number, default: 1},
     email_verified: { type: Number, default: 0},
     activation_link: { type: String },
