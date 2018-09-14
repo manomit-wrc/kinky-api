@@ -21,6 +21,7 @@ const UserActivity = require ('../../models/UserActivity')
 const multer  = require('multer');
 const im = require('imagemagick');
 const PasswordChangeRequests = require('../../models/PasswordChangeRequests');
+const _ = require('lodash');
 
 const CountryList = require('../../config/countries.json');
 
@@ -1269,15 +1270,10 @@ router.post('/load-cities', (req, res) => {
 })
 
 router.post('/upload-profile-image', passport.authenticate('jwt', { session : false }), (req, res) => {
-  const imgName = req.body.img_name.split("/");
-  var info = {
-    url: req.body.img_link,
-    altTag: imgName[1]
-  };
-
+ 
   User.findByIdAndUpdate(
     req.user.id,
-    {$push: {images: info}},
+    {$push: {images: req.body.imageData}},
     {safe: true, upsert: true},
     (err, data) => {
      
@@ -1321,6 +1317,18 @@ router.post('/upload-profile-video', passport.authenticate('jwt', { session : fa
   )
 
   
+})
+
+router.post('/delete-image', passport.authenticate('jwt', { session : false }), async (req, res) => {
+  const user = await User.findById(req.user.id);
+  const imgArr = _.reject(user.images, img => img.url === req.body.image);
+  user.images = imgArr;
+  user.save();
+  return res.json({
+    success: true,
+    code: 200,
+    info: user
+  })
 })
 
 
