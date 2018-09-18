@@ -1088,23 +1088,38 @@ router.post('/personal-details-update', passport.authenticate('jwt', { session :
     user.dd = req.body.data.dd;
     user.mm = req.body.data.mm;
     user.yyyy = req.body.data.yyyy;
+    user.dd_female = req.body.data.dd_female;
+    user.mm_female = req.body.data.mm_female;
+    user.yyyy_female = req.body.data.yyyy_female;
     user.gender = req.body.data.gender;
     user.looking_for = req.body.data.looking_for; 
     user.timezone = req.body.data.timezone;
     user.sexuality = req.body.data.sexuality;
+    user.sexuality_female = req.body.data.sexuality_female;
     user.country = req.body.data.country;
     user.state = req.body.data.state;
     user.ethnicity = req.body.data.ethnicity;
+    user.ethnicity_female = req.body.data.ethnicity_female;
     user.height =req.body.data.height;
+    user.height_female =req.body.data.height_female;
     user.build = req.body.data.build;
+    user.build_female = req.body.data.build_female;
     user.hair =req.body.data.hair;
+    user.hair_female =req.body.data.hair_female;
     user.body_hair = req.body.data.body_hair;
+    user.body_hair_female = req.body.data.body_hair_female;
     user.body_decoration = req.body.data.body_decoration;
+    user.body_decoration_female = req.body.data.body_decoration_female;
     user.drink = req.body.data.drink;
+    user.drink_female = req.body.data.drink_female;
     user.drugs = req.body.data.drugs;
+    user.drugs_female = req.body.data.drugs_female;
     user.smoke = req.body.data.smoke;
+    user.smoke_female = req.body.data.smoke_female;
     user.size = req.body.data.size;
+    user.size_female = req.body.data.size_female;
     user.safe_sex = req.body.data.safe_sex;
+    user.safe_sex_female = req.body.data.safe_sex_female;
     user.travel_arrangment = req.body.data.travel_arrangment;
     user.purpose = req.body.data.purpose;
     user.interested_in = req.body.data.interested_in;
@@ -1528,7 +1543,22 @@ router.post('/set-as-profile', passport.authenticate('jwt', { session: false }),
     code: 200,
     info: user
   });
+});
 
+router.post('/search-by-username', passport.authenticate('jwt', { session : false }), async (req, res) => {
+  const user = await User.findOne({username: req.body.username});
+
+  console.log('====================================');
+  console.log(user);
+  console.log('====================================');
+});
+router.post('/submit-quick-search', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+  const user = await User.find({ $or:[ {'gender':req.body.gender}, {'country':req.body.country},{'state':req.body.state} ] });
+
+  console.log('====================================');
+  console.log(user);
+  console.log('====================================');
 })
 
 
