@@ -1409,7 +1409,14 @@ router.post('/upload-profile-image', passport.authenticate('jwt', { session : fa
     {safe: true, upsert: true},
     (err, data) => {
      
-      
+      User.findById(req.user.id).then(user => {
+        
+        return res.json({
+          success: true,
+          code: 200,
+          info: user
+        });
+      })
       
     }
   )
