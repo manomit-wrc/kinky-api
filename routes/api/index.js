@@ -1092,7 +1092,10 @@ router.post('/personal-details-update', passport.authenticate('jwt', { session :
     user.mm_female = req.body.data.mm_female;
     user.yyyy_female = req.body.data.yyyy_female;
     user.gender = req.body.data.gender;
-    user.looking_for = req.body.data.looking_for; 
+    user.looking_for_male = req.body.data.looking_for_male; 
+    user.looking_for_female = req.body.data.looking_for_female; 
+    user.looking_for_couple = req.body.data.looking_for_couple; 
+    user.looking_for_cd = req.body.data.looking_for_cd; 
     user.timezone = req.body.data.timezone;
     user.sexuality = req.body.data.sexuality;
     user.sexuality_female = req.body.data.sexuality_female;
