@@ -1135,19 +1135,37 @@ router.post('/personal-details-update', passport.authenticate('jwt', { session :
     if (user.save()){
      const settings = await Settings.findOne({user: req.user.id});
 
-     settings.looking_for_male = user.looking_for_male; 
-     settings.looking_for_female = user.looking_for_female; 
-     settings.looking_for_couple = user.looking_for_couple; 
-     settings.looking_for_cd = user.looking_for_cd; 
-     settings.save();
-
-        return res.json({
-          success: true,
-          message:"updated successfull",
-          info: user,
-          settings:settings,
-          code: 200
-        });
+     if(settings !== null) {
+      settings.looking_for_male = user.looking_for_male; 
+      settings.looking_for_female = user.looking_for_female; 
+      settings.looking_for_couple = user.looking_for_couple; 
+      settings.looking_for_cd = user.looking_for_cd; 
+      settings.save();
+      return res.json({
+        success: true,
+        message:"updated successfull",
+        info: user,
+        settings:settings,
+        code: 200
+      });
+     }
+     else {
+       const settings = new Settings({
+        looking_for_male : user.looking_for_male, 
+      looking_for_female : user.looking_for_female, 
+      looking_for_couple : user.looking_for_couple, 
+      looking_for_cd : user.looking_for_cd
+       })
+       settings.save();
+       return res.json({
+        success: true,
+        message:"updated successfull",
+        info: user,
+        settings:settings,
+        code: 200
+      });
+     }
+   
       
 
     }else{
