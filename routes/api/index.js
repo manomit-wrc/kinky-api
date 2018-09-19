@@ -1571,6 +1571,23 @@ router.post('/submit-quick-search', passport.authenticate('jwt', { session : fal
   console.log('====================================');
 })
 
+router.post("/change-image-details", passport.authenticate('jwt', { session : false }), async (req, res) => {
+  User.update({"_id": req.user.id, "images.url": `${req.body.imageUrl}`}, 
+  {
+    $set: {"images.$.access": `${req.body.access}`, "images.$.altTag": `${req.body.altTag}`}
+  }, (err, data) => {
+        
+        User.findById(req.user.id).then(user => {
+          
+          return res.json({
+            success: true,
+            code: 200,
+            info: user
+          });
+        })
+});
+})
+
 
 function diff_years(dt2, dt1) 
 {
