@@ -933,7 +933,9 @@ router.post('/introduction_update',passport.authenticate('jwt', {session : false
 
 });
 router.post('/interest-update',passport.authenticate('jwt', {session : false}), (req,res) => {
-  
+  User.update({ _id: req.user.id }, req.body , { upsert: true, setDefaultsOnInsert: true } , (err, data) => {
+
+  });
   try {
     Settings.update({ user: req.user.id }, req.body , { upsert: true, setDefaultsOnInsert: true } , (err, data) => {
       Settings.findOne({ user: req.user.id }).then(data => {
@@ -1082,8 +1084,11 @@ router.post('/update-promotion', passport.authenticate('jwt', { session : false 
 }); */
 
 router.post('/personal-details-update', passport.authenticate('jwt', { session : false }), async (req, res) => {
+  
+
   const user = await User.findOne({_id: req.user.id});
   
+
   if(user) {
     user.dd = req.body.data.dd;
     user.mm = req.body.data.mm;
@@ -1128,11 +1133,19 @@ router.post('/personal-details-update', passport.authenticate('jwt', { session :
     user.interested_in = req.body.data.interested_in;
     user.age_range = req.body.data.age_range;
     if (user.save()){
+     const settings = await Settings.findOne({user: req.user.id});
+
+     settings.looking_for_male = user.looking_for_male; 
+     settings.looking_for_female = user.looking_for_female; 
+     settings.looking_for_couple = user.looking_for_couple; 
+     settings.looking_for_cd = user.looking_for_cd; 
+     settings.save();
 
         return res.json({
           success: true,
           message:"updated successfull",
           info: user,
+          settings:settings,
           code: 200
         });
       
