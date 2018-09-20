@@ -60,14 +60,14 @@ const userSchema = new Schema({
         {
             url: { type: String },
             altTag: { type: String },
-            access: { type: String, default: 'Public'}
+            access: { type: String, default: 'Private'}
         }
     ],
     videos: [
         {
             url: { type: String },
             altTag: { type: String },
-            access: { type: String, default: 'Public'}
+            access: { type: String, default: 'Private'}
         }
     ],
     status: { type: Number, default: 1},

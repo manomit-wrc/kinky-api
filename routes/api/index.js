@@ -36,7 +36,7 @@ router.post('/signup',  async (req, res) => {
 
       const year_diff = diff_years(current_date,new_date);
       if(year_diff < 18) {
-        return res.json({ success: false, code: 403, message: 'Must be 18 years or above'});
+        return res.json({ success: false, code: 403, message: 'Minimum age require 18 years.'});
       }
     User.findOne({ $or:[ {'username':req.body.username}, {'email':req.body.email} ] }).then(user => {
         if (user) {
