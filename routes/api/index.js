@@ -17,7 +17,8 @@ const HairColor = require('../../models/HairColor');
 const Height = require('../../models/Height');
 const BodyHair = require('../../models/BodyHair');
 const Build = require('../../models/Build');
-const UserActivity = require ('../../models/UserActivity')
+const UserActivity = require ('../../models/UserActivity');
+const Friendrequest = require ('../../models/Friendrequest');
 const multer  = require('multer');
 const im = require('imagemagick');
 const PasswordChangeRequests = require('../../models/PasswordChangeRequests');
@@ -1702,20 +1703,86 @@ router.post('/set-as-profile', passport.authenticate('jwt', { session: false }),
 });
 
 router.post('/search-by-username', passport.authenticate('jwt', { session : false }), async (req, res) => {
-  const user = await User.findOne({username: req.body.username});
+  const user = await User.find({username: req.body.username,'_id': { $ne: req.user.id }});
 
-  console.log('====================================');
-  console.log(user);
-  console.log('====================================');
+  if(user.length != 0) {
+    return res.json({
+      success: true,
+      code: 200,
+      info: user
+    });
+  }else{
+    return res.json({
+      success: true,
+      code: 400,
+      info: "user not found"
+    });
+  }
+});
+router.post('/userdetailsByid' , async (req, res) => {
+  const user = await User.findById(req.body.id);
+
+  if(user) {
+    return res.json({
+      success: true,
+      code: 200,
+      info: user
+    });
+  }else{
+    return res.json({
+      success: true,
+      code: 400,
+      info: "user not found"
+    });
+  }
 });
 router.post('/submit-quick-search', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
-  const user = await User.find({ $or:[ {'gender':req.body.gender}, {'country':req.body.country},{'state':req.body.state} ] });
-
-  console.log('====================================');
-  console.log(user);
-  console.log('====================================');
+  const user = await User.find({ $or:[ {'gender':req.body.gender}, {'country':req.body.country},{'state':req.body.state}, ] });
+  if(user){
+    return res.json({
+      success: true,
+      code: 200,
+      info: user
+    });
+  }
 })
+router.post('/request_send', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+  const from_id = req.user.id;
+  const to_id = req.body.to_id;
+
+  const sendRequest = new Friendrequest({
+    from_user : from_id,
+    to_user : to_id,
+    requested_add : new Date()
+  });
+  if (sendRequest.save()){
+
+    return res.json({
+      success: true,
+      code: 200,
+      status: 0,
+      info: "Request send successfully"
+    });
+  }
+    
+
+});
+router.post('/fetch-invetation', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+  const from_id = req.user.id;
+  const user = await Friendrequest.find({to_user: from_id}).populate('from_user');
+  if(user){
+    return res.json({
+      success: true,
+      code: 200,
+      info: user
+    });
+  }
+    
+
+});
 
 router.post("/change-image-details", passport.authenticate('jwt', { session : false }), async (req, res) => {
   User.update({"_id": req.user.id, "images.url": `${req.body.imageUrl}`}, 
