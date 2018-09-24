@@ -1761,11 +1761,30 @@ if(req.body.state){
   cond.state = req.body.state;
 }
 
+let setting = await Settings.find(cond).populate('user');
+console.log('====================================');
+console.log(setting);
+console.log('====================================');
+setting = _.filter(setting, i=>i.user!=null && i.user._id !=req.user.id);
+
+if(req.body.gender){
+  setting = _.filter(setting, i=>i.user.gender == req.body.gender);
+}
 
 
-const user = await Settings.find(cond);
-
-console.log(user);
+if(setting.length !=0) {
+  return res.json({
+    success: true,
+    code: 200,
+    info: setting
+  });
+}else{
+  return res.json({
+    success: true,
+    code: 400,
+    info: "user not found"
+  });
+}
 
 
 })
