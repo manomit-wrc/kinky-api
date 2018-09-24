@@ -1761,7 +1761,9 @@ if(req.body.state){
   cond.state = req.body.state;
 }
 
-const user = Settings.find(cond);
+
+
+const user = await Settings.find(cond);
 
 console.log(user);
 
