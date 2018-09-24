@@ -1737,15 +1737,35 @@ router.post('/userdetailsByid' , async (req, res) => {
   }
 });
 router.post('/submit-quick-search', passport.authenticate('jwt', { session : false }), async (req, res) => {
+const cond ={};
+if(req.body.looking_for_male){
+  cond.looking_for_male = req.body.looking_for_male;
+}
+if(req.body.looking_for_female){
+  cond.looking_for_female = req.body.looking_for_female;
+}
+if(req.body.looking_for_couple){
+  cond.looking_for_couple = req.body.looking_for_couple;
+}
+if(req.body.looking_for_cd){
+  cond.looking_for_cd = req.body.looking_for_cd;
+}
 
-  const user = await User.find({ $or:[ {'gender':req.body.gender}, {'country':req.body.country},{'state':req.body.state}, ] });
-  if(user){
-    return res.json({
-      success: true,
-      code: 200,
-      info: user
-    });
-  }
+if(req.body.distance){
+  cond.distance = req.body.distance;
+}
+if(req.body.country){
+  cond.country = req.body.country;
+}
+if(req.body.state){
+  cond.state = req.body.state;
+}
+
+const user = Settings.find(cond);
+
+console.log(user);
+
+
 })
 router.post('/request_send', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
@@ -1772,7 +1792,7 @@ router.post('/request_send', passport.authenticate('jwt', { session : false }), 
 router.post('/fetch-invetation', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
   const from_id = req.user.id;
-  const user = await Friendrequest.find({to_user: from_id}).populate('from_user');
+  const user = await Friendrequest.find({to_user: from_id , status: 0}).populate('from_user');
   if(user){
     return res.json({
       success: true,
@@ -1780,6 +1800,134 @@ router.post('/fetch-invetation', passport.authenticate('jwt', { session : false 
       info: user
     });
   }
+    
+
+});
+router.post('/show_invetation_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+  const from_id = req.user.id;
+  const user = await Friendrequest.find({from_user: from_id}).populate('to_user');
+  if(user){
+    return res.json({
+      success: true,
+      code: 200,
+      info: user
+    });
+  }
+    
+
+});
+router.post('/accept', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+  const to_id = req.user.id;
+  const from_id = req.body.from_id;
+
+  const user = await Friendrequest.findOne({from_user:from_id,to_user:to_id});
+
+  user.status = 1;
+  user.requested_add = new Date();
+
+   if(user.save()){
+    const users = await Friendrequest.find({to_user: to_id, status: 0}).populate('from_user');
+    return res.json({
+      success: true,
+      code: 200,
+      info: users,
+      msg: "Request accepted"
+    });
+  } 
+    
+
+});
+router.post('/reject', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+  const to_id = req.user.id;
+  const from_id = req.body.from_id;
+
+  const user = await Friendrequest.findOne({from_user:from_id,to_user:to_id});
+
+  user.status = 2;
+  user.requested_add = new Date();
+
+   if(user.save()){
+    const users = await Friendrequest.find({to_user: to_id, status: 0}).populate('from_user');
+    return res.json({
+      success: true,
+      code: 200,
+      info: users,
+      msg: "Request decline"
+    });
+  } 
+    
+
+});
+router.post('/friend_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+  const to_id = req.user.id;
+
+  const users = await Friendrequest.find({to_user: to_id, status: 1}).populate('from_user');
+  
+   if(users){
+    return res.json({
+      success: true,
+      code: 200,
+      info: users
+    });
+  } 
+    
+
+});
+router.post('/cancel_invetation', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+  const from_id = req.user.id;
+  const to_id = req.body.to_id;
+
+  const user = await Friendrequest.findOne({from_user:from_id,to_user:to_id});
+  
+    if(user.remove()){
+  const users = await Friendrequest.find({from_user: from_id}).populate('to_user');
+    return res.json({
+      success: true,
+      code: 200,
+      info: users, 
+      msg: 'Request canceled'
+    });
+  }  
+    
+
+});
+router.post('/friend_remove', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+  const from_id = req.body.to_id;
+  const to_id = req.user.id;
+
+  const user = await Friendrequest.findOne({from_user:from_id,to_user:to_id});
+
+  
+   if(user.remove()){
+  const users = await Friendrequest.find({to_user: to_id}).populate('from_user');
+    return res.json({
+      success: true,
+      code: 200,
+      info: users, 
+      msg: 'Friend removed from your friend list'
+    });
+  }  
+    
+
+});
+router.post('/count_friend_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+  Friendrequest.find({to_user: req.user.id, status: 1}).count(function(err,countData){
+
+    return res.json({
+      success: true,
+      count: countData,
+      code: 200
+    });
+
+
+});
     
 
 });
