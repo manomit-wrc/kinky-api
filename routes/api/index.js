@@ -1736,57 +1736,58 @@ router.post('/userdetailsByid' , async (req, res) => {
     });
   }
 });
-router.post('/submit-quick-search', passport.authenticate('jwt', { session : false }), async (req, res) => {
-const cond ={};
-if(req.body.looking_for_male){
-  cond.looking_for_male = req.body.looking_for_male;
-}
-if(req.body.looking_for_female){
-  cond.looking_for_female = req.body.looking_for_female;
-}
-if(req.body.looking_for_couple){
-  cond.looking_for_couple = req.body.looking_for_couple;
-}
-if(req.body.looking_for_cd){
-  cond.looking_for_cd = req.body.looking_for_cd;
-}
+router.post('/submit-quick-search', passport.authenticate('jwt', { session : false }), (req, res) => {
+  let cond = {};
+  let settingCond = {};
 
-if(req.body.distance){
-  cond.distance = req.body.distance;
-}
-if(req.body.country){
-  cond.country = req.body.country;
-}
-if(req.body.state){
-  cond.state = req.body.state;
-}
+  if(req.body.looking_for_male){
+    settingCond.looking_for_male = req.body.looking_for_male;
+  }
+  if(req.body.looking_for_female){
+    settingCond.looking_for_female = req.body.looking_for_female;
+  }
+  if(req.body.looking_for_couple){
+    settingCond.looking_for_couple = req.body.looking_for_couple;
+  }
+  if(req.body.looking_for_cd){
+    settingCond.looking_for_cd = req.body.looking_for_cd;
+  }
+  
+  if(req.body.distance){
+    settingCond.distance = parseInt(req.body.distance);
+  }
+  if(req.body.country){
+    settingCond.country = req.body.country;
+  }
+  if(req.body.state){
+    settingCond.state = req.body.state;
+  }
+  
+  
 
-let setting = await Settings.find(cond).populate('user');
-console.log('====================================');
-console.log(setting);
-console.log('====================================');
-setting = _.filter(setting, i=>i.user!=null && i.user._id !=req.user.id);
+  if(req.body.gender) {
+    cond["user.gender"] = req.body.gender;
+  }
 
-if(req.body.gender){
-  setting = _.filter(setting, i=>i.user.gender == req.body.gender);
-}
-
-
-if(setting.length !=0) {
-  return res.json({
-    success: true,
-    code: 200,
-    info: setting
+  
+  console.log(cond);
+  Settings.aggregate([
+    { "$match": settingCond },
+    {
+      "$lookup": {
+          "from": "users",
+          "localField": "user",
+          "foreignField": "_id",
+          "as": "user"
+      }
+    },
+    { "$match": cond }
+  ]).exec((err, response) => {
+    
+    const user = _.filter(response, r => r.user[0]._id !== req.user.id );
+    console.log(user);
+    console.log(user.length);
   });
-}else{
-  return res.json({
-    success: true,
-    code: 400,
-    info: "user not found"
-  });
-}
-
-
 })
 router.post('/request_send', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
