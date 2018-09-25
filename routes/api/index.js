@@ -25,6 +25,7 @@ const PasswordChangeRequests = require('../../models/PasswordChangeRequests');
 const _ = require('lodash');
 
 const CountryList = require('../../config/countries.json');
+const Post = require('../../models/Post');
 
 //for sending email
 const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb8', 'fde7e8364b2ba00150f43eae0851cc85');
@@ -1762,9 +1763,7 @@ if(req.body.state){
 }
 
 let setting = await Settings.find(cond).populate('user');
-console.log('====================================');
-console.log(setting);
-console.log('====================================');
+
 setting = _.filter(setting, i=>i.user!=null && i.user._id !=req.user.id);
 
 if(req.body.gender){
@@ -1898,6 +1897,22 @@ router.post('/friend_list', passport.authenticate('jwt', { session : false }), a
     
 
 });
+router.post('/friend_list_by_user', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+  const to_id = req.body.id;
+
+  const users = await Friendrequest.find({to_user: to_id, status: 1}).populate('from_user');
+  
+   if(users){
+    return res.json({
+      success: true,
+      code: 200,
+      info: users
+    });
+  } 
+    
+
+});
 router.post('/cancel_invetation', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
   const from_id = req.user.id;
@@ -1950,6 +1965,36 @@ router.post('/count_friend_list', passport.authenticate('jwt', { session : false
 
 });
     
+
+});
+router.post('/post_description', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+   const post = new Post({
+     user: req.user.id,
+     add_time: new Date(),
+     description: req.body.post_description
+   });
+
+   if(post.save()){
+    return res.json({
+      success: true,
+      info: post,
+      code: 200
+    });
+   }
+
+});
+router.post('/post_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+const post = await Post.find({user:req.user.id}).populate('user');
+
+   if(post){
+    return res.json({
+      success: true,
+      info: post,
+      code: 200
+    });
+   }
 
 });
 
