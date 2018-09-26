@@ -1604,21 +1604,19 @@ router.post('/upload-profile-video', passport.authenticate('jwt', { session : fa
 })
 router.post('/video-set-private', passport.authenticate('jwt', { session : false }), (req, res) => {
 
-  User.findById(req.user.id).then(user => {
-    
- for(let i =0;i<user.videos.length;i++){
-  if(user.videos[i]._id == req.body.id){
-    user.videos[i].access = 'private';
-  }
- }
- if(user.save()){
-  return res.json({
-    success: true,
-    code: 200,
-    info: user
-  });
- }
-  })
+  User.update({"_id": req.user.id, "videos.url": `${req.body.videoUrl}`}, 
+  {
+    $set: {"videos.$.access": `${req.body.access}`}}, (err, data) => {
+        
+        User.findById(req.user.id).then(user => {
+          
+          return res.json({
+            success: true,
+            code: 200,
+            info: user
+          });
+        })
+});
   
 })
 router.post('/video-delete', passport.authenticate('jwt', { session : false }), (req, res) => {
@@ -1626,7 +1624,7 @@ router.post('/video-delete', passport.authenticate('jwt', { session : false }), 
   User.findById(req.user.id).then(user => {
     
  for(let i =0;i<user.videos.length;i++){
-  if(user.videos[i]._id == req.body.id){
+  if(user.videos[i].url == req.body.id){
     //console.log(user.videos[i].access);
     user.videos.splice(i, 1);
   }
@@ -1643,23 +1641,20 @@ router.post('/video-delete', passport.authenticate('jwt', { session : false }), 
 })
 router.post('/video-update', passport.authenticate('jwt', { session : false }), (req, res) => {
 
-  User.findById(req.user.id).then(user => {
-    
- for(let i =0;i<user.videos.length;i++){
-  if(user.videos[i].url == req.body.url){
-    //console.log(user.videos[i].access);
-    user.videos[i].access = req.body.access;
-    user.videos[i].altTag = req.body.tag;
-  }
- }
- if(user.save()){
-  return res.json({
-    success: true,
-    code: 200,
-    info: user
-  });
- }
-  })
+  User.update({"_id": req.user.id, "videos.url": `${req.body.videoUrl}`}, 
+  {
+    $set: {"videos.$.access": `${req.body.access}`, "videos.$.altTag": `${req.body.altTag}`}
+  }, (err, data) => {
+        
+        User.findById(req.user.id).then(user => {
+          
+          return res.json({
+            success: true,
+            code: 200,
+            info: user
+          });
+        })
+});
   
 })
 
