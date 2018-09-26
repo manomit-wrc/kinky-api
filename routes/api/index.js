@@ -23,8 +23,10 @@ const multer  = require('multer');
 const im = require('imagemagick');
 const PasswordChangeRequests = require('../../models/PasswordChangeRequests');
 const _ = require('lodash');
+const mongoose = require('mongoose');
 
 const CountryList = require('../../config/countries.json');
+const Post = require('../../models/Post');
 
 //for sending email
 const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb8', 'fde7e8364b2ba00150f43eae0851cc85');
@@ -1703,21 +1705,35 @@ router.post('/set-as-profile', passport.authenticate('jwt', { session: false }),
 });
 
 router.post('/search-by-username', passport.authenticate('jwt', { session : false }), async (req, res) => {
-  const user = await User.find({username: req.body.username,'_id': { $ne: req.user.id }});
 
-  if(user.length != 0) {
+  Settings.aggregate([
+    { "$match": { "user": { "$ne": new mongoose.Types.ObjectId(req.user.id ) } } },
+    {
+      "$lookup": {
+          "from": "users",
+          "localField": "user",
+          "foreignField": "_id",
+          "as": "user"
+      }
+    },
+    {
+      "$lookup": {
+          "from": "friendrequests",
+          "localField": "user._id",
+          "foreignField": "to_user",
+          "as": "friend_request"
+      }
+    },
+    { "$match": { "user.username": req.body.username } }
+  ]).exec((err, response) => {
     return res.json({
       success: true,
       code: 200,
-      info: user
+      info: response
     });
-  }else{
-    return res.json({
-      success: true,
-      code: 400,
-      info: "user not found"
-    });
-  }
+   
+  });
+  
 });
 router.post('/userdetailsByid' , async (req, res) => {
   const user = await User.findById(req.body.id);
@@ -1769,10 +1785,9 @@ router.post('/submit-quick-search', passport.authenticate('jwt', { session : fal
     cond["user.gender"] = req.body.gender;
   }
 
-  
-  console.log(cond);
   Settings.aggregate([
     { "$match": settingCond },
+    { "$match": { "user": { "$ne": new mongoose.Types.ObjectId(req.user.id ) } } },
     {
       "$lookup": {
           "from": "users",
@@ -1781,13 +1796,109 @@ router.post('/submit-quick-search', passport.authenticate('jwt', { session : fal
           "as": "user"
       }
     },
+    {
+      "$lookup": {
+          "from": "friendrequests",
+          "localField": "user._id",
+          "foreignField": "to_user",
+          "as": "friend_request"
+      }
+    },
     { "$match": cond }
   ]).exec((err, response) => {
     
-    const user = _.filter(response, r => r.user.length > 0 && r.user[0]._id !== req.user.id );
-    
+    return res.json({
+      success: true,
+      code: 200,
+      info: response
+    });
   });
 })
+router.post('/submit-advance-search', passport.authenticate('jwt', { session : false }), (req, res) => {
+  let cond = {};
+  let settingCond = {};
+
+  if(req.body.looking_for_male){
+    settingCond.looking_for_male = req.body.looking_for_male;
+  }
+  if(req.body.looking_for_female){
+    settingCond.looking_for_female = req.body.looking_for_female;
+  }
+  if(req.body.looking_for_couple){
+    settingCond.looking_for_couple = req.body.looking_for_couple;
+  }
+  if(req.body.looking_for_cd){
+    settingCond.looking_for_cd = req.body.looking_for_cd;
+  }
+  
+  if(req.body.distance){
+    settingCond.distance = parseInt(req.body.distance);
+  }
+  if(req.body.country){
+    settingCond.country = req.body.country;
+  }
+  if(req.body.state){
+    settingCond.state = req.body.state;
+  }
+  if(req.body.from_age){
+    settingCond.from_age = req.body.from_age;
+  }
+  if(req.body.to_age){
+    settingCond.to_age = req.body.to_age;
+  }
+  
+  if(req.body.gender) {
+    cond["user.gender"] = req.body.gender;
+  }
+  if(req.body.ethnicity) {
+    cond["user.ethnicity"] = new mongoose.Types.ObjectId(req.body.ethnicity);
+  }
+  if(req.body.smoke) {
+    cond["user.smoke"] = req.body.smoke;
+  }
+  if(req.body.safe_sex) {
+    cond["user.safe_sex"] = req.body.safe_sex;
+  }
+  if(req.body.size) {
+    cond["user.size"] = req.body.size;
+  }
+  if(req.body.build) {
+    cond["user.build"] = new mongoose.Types.ObjectId(req.body.build);
+  }
+
+
+  Settings.aggregate([
+    { "$match": settingCond },
+    { "$match": { "user": { "$ne": new mongoose.Types.ObjectId(req.user.id ) } } },
+    {
+      "$lookup": {
+          "from": "users",
+          "localField": "user",
+          "foreignField": "_id",
+          "as": "user"
+      }
+    },
+    {
+      "$lookup": {
+          "from": "friendrequests",
+          "localField": "user._id",
+          "foreignField": "to_user",
+          "as": "friend_request"
+      }
+    },
+    { "$match": cond }
+  ]).exec((err, response) => {
+    return res.json({
+      success: true,
+      code: 200,
+      info: response
+    });
+   
+  });
+
+})
+
+
 router.post('/request_send', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
   const from_id = req.user.id;
@@ -1898,6 +2009,22 @@ router.post('/friend_list', passport.authenticate('jwt', { session : false }), a
     
 
 });
+router.post('/friend_list_by_user', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+  const to_id = req.body.id;
+
+  const users = await Friendrequest.find({to_user: to_id, status: 1}).populate('from_user');
+  
+   if(users){
+    return res.json({
+      success: true,
+      code: 200,
+      info: users
+    });
+  } 
+    
+
+});
 router.post('/cancel_invetation', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
   const from_id = req.user.id;
@@ -1919,11 +2046,11 @@ router.post('/cancel_invetation', passport.authenticate('jwt', { session : false
 });
 router.post('/friend_remove', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
-  const from_id = req.body.to_id;
-  const to_id = req.user.id;
+  const to_id = req.body.to_id;
+  const from_id = req.user.id;
 
   const user = await Friendrequest.findOne({from_user:from_id,to_user:to_id});
-
+  
   
    if(user.remove()){
   const users = await Friendrequest.find({to_user: to_id}).populate('from_user');
@@ -1931,7 +2058,7 @@ router.post('/friend_remove', passport.authenticate('jwt', { session : false }),
       success: true,
       code: 200,
       info: users, 
-      msg: 'Friend removed from your friend list'
+      msg: 'Request withdraw successfully'
     });
   }  
     
@@ -1950,6 +2077,36 @@ router.post('/count_friend_list', passport.authenticate('jwt', { session : false
 
 });
     
+
+});
+router.post('/post_description', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+   const post = new Post({
+     user: req.user.id,
+     add_time: new Date(),
+     description: req.body.post_description
+   });
+
+   if(post.save()){
+    return res.json({
+      success: true,
+      info: post,
+      code: 200
+    });
+   }
+
+});
+router.post('/post_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+const post = await Post.find({user:req.user.id}).populate('user');
+
+   if(post){
+    return res.json({
+      success: true,
+      info: post,
+      code: 200
+    });
+   }
 
 });
 
