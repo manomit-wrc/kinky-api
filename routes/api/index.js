@@ -1784,9 +1784,8 @@ router.post('/submit-quick-search', passport.authenticate('jwt', { session : fal
     { "$match": cond }
   ]).exec((err, response) => {
     
-    const user = _.filter(response, r => r.user[0]._id !== req.user.id );
-    console.log(user);
-    console.log(user.length);
+    const user = _.filter(response, r => r.user.length > 0 && r.user[0]._id !== req.user.id );
+    
   });
 })
 router.post('/request_send', passport.authenticate('jwt', { session : false }), async (req, res) => {
