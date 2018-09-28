@@ -50,7 +50,7 @@ router.post('/signup',  async (req, res) => {
             r: 'pg', // Rating
             d: 'mm' // Default
         });
-          
+        const activation_link = crypto.randomBytes(64).toString('hex');
           const newUser = new User({
             username: req.body.username,
             email: req.body.email,
@@ -59,7 +59,8 @@ router.post('/signup',  async (req, res) => {
             gender: req.body.gender,
             dd: req.body.dd,
             mm: req.body.mm,
-            yyyy: req.body.yyyy
+            yyyy: req.body.yyyy,
+            activation_link
           });
     
           bcrypt.genSalt(10, (err, salt) => {
@@ -105,11 +106,7 @@ router.post('/signup',  async (req, res) => {
                 
                     <title>Registration Notification</title>
                 
-                    
-                  Settings.findOne({ user: user._id })
-                  .then(settings => {
-
-                  })<style>
+                     <style>
                 
                         body {
                 
@@ -164,24 +161,21 @@ router.post('/signup',  async (req, res) => {
                                         <span style="font-size: 12px; line-height: 1.5; color: #333333;">
                 
                                           Hi ${user.username}, <br/>    
-                                          Thank you for register with us.
-                
-                                            <br/><br/>
-                
-                                            Please verify your email after login from my profile section.
-                                            <br/>
-            
-                                            
-                
-                                            <br/><br/>
+                                          Please click on the below link to verify your email
+                  
+                                          <br/><br/>
+              
+                                          <a href="${process.env.FRONT_END_URL}/verify/${user.activation_link}">Click here to verify</a>
+                                          <br/>
+          
+                                          
+              
+                                          <br/><br/>
                 
                                             We recommend that you keep your password secure and not share it with anyone.If you feel your password has been compromised, you can change it by going to your Change password page and clicking on the "Change Password" link.
                 
                                             <br/><br/>
                 
-                                            If you need help, or you have any other questions, feel free to email info@wrctpl.com, or call customer service toll-free at +91-1234567890.
-                
-                                            <br/><br/>
                 
                                            Kinky - AN online dating service
                 
@@ -332,10 +326,7 @@ router.post('/forgot-password', (req, res) => {
                                               We recommend that you keep your password secure and not share it with anyone.If you feel your password has been compromised, you can change it by going to your Change password page and clicking on the "Change Password" link.
                   
                                               <br/><br/>
-                  
-                                              If you need help, or you have any other questions, feel free to email info@wrctpl.com, or call customer service toll-free at +91-1234567890.
-                  
-                                              <br/><br/>
+
                   
                                              Kinky - AN online dating service
                   
@@ -609,9 +600,6 @@ router.post('/change-password',passport.authenticate('jwt', {session : false}), 
                   
                                               <br/><br/>
                   
-                                              If you need help, or you have any other questions, feel free to email info@wrctpl.com, or call customer service toll-free at +91-1234567890.
-                  
-                                              <br/><br/>
                   
                                              Kinky - AN online dating service
                   
@@ -1472,9 +1460,6 @@ router.post('/verify-email', passport.authenticate('jwt', { session : false }), 
                   
                                               <br/><br/>
                   
-                                              If you need help, or you have any other questions, feel free to email info@wrctpl.com, or call customer service toll-free at +91-1234567890.
-                  
-                                              <br/><br/>
                   
                                              Kinky - AN online dating service
                   
@@ -1782,7 +1767,7 @@ router.post('/submit-quick-search', passport.authenticate('jwt', { session : fal
     cond["user.gender"] = req.body.gender;
   }
 
-  Settings.aggregate([
+Settings.aggregate([
     { "$match": settingCond },
     { "$match": { "user": { "$ne": new mongoose.Types.ObjectId(req.user.id ) } } },
     {
@@ -1809,7 +1794,7 @@ router.post('/submit-quick-search', passport.authenticate('jwt', { session : fal
       code: 200,
       info: response
     });
-  });
+  }); 
 })
 router.post('/submit-advance-search', passport.authenticate('jwt', { session : false }), (req, res) => {
   let cond = {};
@@ -1935,7 +1920,7 @@ router.post('/fetch-invetation', passport.authenticate('jwt', { session : false 
 router.post('/show_invetation_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
   const from_id = req.user.id;
-  const user = await Friendrequest.find({from_user: from_id}).populate('to_user');
+  const user = await Friendrequest.find({from_user: from_id,status:0}).populate('to_user');
   if(user){
     return res.json({
       success: true,
@@ -1958,10 +1943,12 @@ router.post('/accept', passport.authenticate('jwt', { session : false }), async 
 
    if(user.save()){
     const users = await Friendrequest.find({to_user: to_id, status: 0}).populate('from_user');
+    const users2 = await Friendrequest.find({to_user: to_id, status: 1}).populate('from_user');
     return res.json({
       success: true,
       code: 200,
       info: users,
+      results:users2,
       msg: "Request accepted"
     });
   } 
@@ -1994,13 +1981,18 @@ router.post('/friend_list', passport.authenticate('jwt', { session : false }), a
 
   const to_id = req.user.id;
 
-  const users = await Friendrequest.find({to_user: to_id, status: 1}).populate('from_user');
+  const users1 = await Friendrequest.find({to_user: to_id, status: 1}).populate('from_user');
+  const users2 = await Friendrequest.find({from_user: to_id, status: 1}).populate('to_user');
+
+  const user3 = users1.concat(users2);
+
+
   
-   if(users){
+   if(user3){
     return res.json({
       success: true,
       code: 200,
-      info: users
+      info: user3
     });
   } 
     
@@ -2010,13 +2002,14 @@ router.post('/friend_list_by_user', passport.authenticate('jwt', { session : fal
 
   const to_id = req.body.id;
 
-  const users = await Friendrequest.find({to_user: to_id, status: 1}).populate('from_user');
-  
-   if(users){
+  const users1 = await Friendrequest.find({to_user: to_id, status: 1}).populate('from_user');
+  const users2 = await Friendrequest.find({from_user: to_id, status: 1}).populate('to_user');
+  const user3 = users1.concat(users2);
+   if(user3){
     return res.json({
       success: true,
       code: 200,
-      info: users
+      info: user3
     });
   } 
     
@@ -2063,7 +2056,21 @@ router.post('/friend_remove', passport.authenticate('jwt', { session : false }),
 });
 router.post('/count_friend_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
-  Friendrequest.find({to_user: req.user.id, status: 1}).count(function(err,countData){
+  const to_users = await Friendrequest.find({to_user: req.user.id, status: 1});
+  const from_users = await Friendrequest.find({from_user: req.user.id, status: 1});
+  const users = to_users.concat(from_users);
+if(users){
+  return res.json({
+    success: true,
+    count: users.length,
+    code: 200
+  });
+}
+
+});
+router.post('/friends_request_count', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+  Friendrequest.find({to_user: req.user.id, status: 0}).count(function(err,countData){
 
     return res.json({
       success: true,
