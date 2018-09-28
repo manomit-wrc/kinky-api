@@ -1819,7 +1819,9 @@ router.post('/submit-quick-search', passport.authenticate('jwt', { session : fal
     cond["user.gender"] = req.body.gender;
   }
 
-  Settings.aggregate([
+
+
+Settings.aggregate([
     { "$match": settingCond },
     { "$match": { "user": { "$ne": new mongoose.Types.ObjectId(req.user.id ) } } },
     {
@@ -1838,7 +1840,8 @@ router.post('/submit-quick-search', passport.authenticate('jwt', { session : fal
           "as": "friend_request"
       }
     },
-    { "$match": cond }
+    { "$match": cond },/* 
+    {"$match":{ $or: [{ 'friend_request.from_user': req.user.id }, { 'friend_request.to_user': req.user.id }] }}, */
   ]).exec((err, response) => {
     
     return res.json({
