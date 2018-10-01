@@ -2130,6 +2130,21 @@ router.post('/friend_remove', passport.authenticate('jwt', { session : false }),
 });
 router.post('/count_friend_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
+  const to_users = await Friendrequest.find({to_user: req.user.id, status: 1});
+  const from_users = await Friendrequest.find({from_user: req.user.id, status: 1});
+  const users = to_users.concat(from_users);
+if(users){
+  return res.json({
+    success: true,
+    count: users.length,
+    code: 200
+  });
+}
+
+});
+router.post('/friends_request_count', passport.authenticate('jwt', { session : false }), (req, res) => {
+
+  
   Friendrequest.find({to_user: req.user.id, status: 1}).count(function(err,countData){
 
     return res.json({
