@@ -36,8 +36,8 @@ const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb
 //end
 
 var s3 = new AWS.S3({
-  accessKeyId: 'AKIARWF6LMXZBHJY2TXA',
-  secretAccessKey: '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'
+  accessKeyId: '',
+  secretAccessKey: ''
 })
 
 var upload = multer({
