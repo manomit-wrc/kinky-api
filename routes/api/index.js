@@ -36,8 +36,8 @@ const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb
 //end
 
 var s3 = new AWS.S3({
-  accessKeyId: '',
-  secretAccessKey: ''
+  accessKeyId: 'AKIARWF6LMXZBHJY2TXA',
+  secretAccessKey: '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'
 })
 
 var upload = multer({
@@ -57,6 +57,21 @@ var upload = multer({
         cb(null, sharp().resize(170, 170).jpeg())
       }
     }]
+  })
+})
+
+var video = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: 'kinky-wrc/videos',
+    acl: 'public-read',
+    metadata: function (req, file, cb) {
+      cb(null, {fieldName: file.fieldname});
+    },
+    key: function (req, file, cb) {
+      const ext = file.originalname.split(".");
+      cb(null, `${Date.now().toString()}.${ext[1]}`)
+    }
   })
 })
 
@@ -1619,24 +1634,36 @@ router.post('/upload-profile-image', upload.any('images'), passport.authenticate
   )
 
   
-})
-router.post('/upload-profile-video', passport.authenticate('jwt', { session : false }), (req, res) => {
-  User.findByIdAndUpdate(
-    req.user.id,
-    {$push: {videos: req.body.videoData}},
-    {safe: true, upsert: true},
-    (err, data) => {
+});
+
+router.post('/upload-profile-video', video.any('videos'), passport.authenticate('jwt', { session : false }), (req, res) => {
+
+  var videoData = [];
+  for(let i = 0; i < req.files.length; i++) {
      
-      User.findById(req.user.id).then(user => {
-        
-        return res.json({
-          success: true,
-          code: 200,
-          info: user
-        });
-      })
+    videoData.push({
+       url: req.files[i].location,
+       altTag: req.files[i].key,
+       access: 'Private'
+     })
+  }
+
+  User.findByIdAndUpdate(
+  req.user.id,
+  {$push: {videos: videoData}},
+  {safe: true, upsert: true},
+  (err, data) => {
+    
+    User.findById(req.user.id).then(user => {
       
-    }
+      return res.json({
+        success: true,
+        code: 200,
+        info: user
+      });
+    })
+    
+  }
   )
 
   
@@ -2116,6 +2143,21 @@ router.post('/count_friend_list', passport.authenticate('jwt', { session : false
     
 
 });
+
+router.post('/friends_request_count', passport.authenticate('jwt', { session: false}), (req, res) => {
+
+  Friendrequest.find({ to_user: req.user.id }).count((err, countData) => {
+    return res.json({
+      success: true,
+      count: countData,
+      code: 200
+    });
+  });
+
+});
+
+
+
 router.post('/post_description', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
    const post = new Post({
