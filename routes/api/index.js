@@ -2072,7 +2072,7 @@ if(users){
 }
 
 });
-router.post('/friends_request_count', passport.authenticate('jwt', { session : false }), async (req, res) => {
+router.post('/friends_request_count', passport.authenticate('jwt', { session : false }), (req, res) => {
 
   Friendrequest.find({to_user: req.user.id, status: 0}).count(function(err,countData){
 
