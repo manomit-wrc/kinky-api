@@ -19,8 +19,10 @@ const BodyHair = require('../../models/BodyHair');
 const Build = require('../../models/Build');
 const UserActivity = require ('../../models/UserActivity');
 const Friendrequest = require ('../../models/Friendrequest');
-var multer = require('multer');
-var imager = require('multer-imager');
+const AWS = require('aws-sdk');
+var multer = require('multer')
+var multerS3 = require('multer-s3-transform');
+var sharp = require('sharp');
 const im = require('imagemagick');
 const PasswordChangeRequests = require('../../models/PasswordChangeRequests');
 const _ = require('lodash');
@@ -32,6 +34,31 @@ const Post = require('../../models/Post');
 //for sending email
 const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb8', 'fde7e8364b2ba00150f43eae0851cc85');
 //end
+
+var s3 = new AWS.S3({
+  accessKeyId: '',
+  secretAccessKey: ''
+})
+
+var upload = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: 'kinky-wrc/images',
+    acl: 'public-read',
+    shouldTransform: function (req, file, cb) {
+      cb(null, /^image/i.test(file.mimetype))
+    },
+    transforms: [{
+      id: 'thumbnail',
+      key: function (req, file, cb) {
+        cb(null, `${Date.now().toString()}.jpg`)
+      },
+      transform: function (req, file, cb) {
+        cb(null, sharp().resize(170, 170).jpeg())
+      }
+    }]
+  })
+})
 
 
 router.post('/signup',  async (req, res) => {
@@ -51,7 +78,7 @@ router.post('/signup',  async (req, res) => {
             r: 'pg', // Rating
             d: 'mm' // Default
         });
-        const activation_link = crypto.randomBytes(64).toString('hex');
+          
           const newUser = new User({
             username: req.body.username,
             email: req.body.email,
@@ -60,8 +87,7 @@ router.post('/signup',  async (req, res) => {
             gender: req.body.gender,
             dd: req.body.dd,
             mm: req.body.mm,
-            yyyy: req.body.yyyy,
-            activation_link
+            yyyy: req.body.yyyy
           });
     
           bcrypt.genSalt(10, (err, salt) => {
@@ -107,7 +133,11 @@ router.post('/signup',  async (req, res) => {
                 
                     <title>Registration Notification</title>
                 
-                     <style>
+                    
+                  Settings.findOne({ user: user._id })
+                  .then(settings => {
+
+                  })<style>
                 
                         body {
                 
@@ -162,21 +192,24 @@ router.post('/signup',  async (req, res) => {
                                         <span style="font-size: 12px; line-height: 1.5; color: #333333;">
                 
                                           Hi ${user.username}, <br/>    
-                                          Please click on the below link to verify your email
-                  
-                                          <br/><br/>
-              
-                                          <a href="${process.env.FRONT_END_URL}/verify/${user.activation_link}">Click here to verify</a>
-                                          <br/>
-          
-                                          
-              
-                                          <br/><br/>
+                                          Thank you for register with us.
+                
+                                            <br/><br/>
+                
+                                            Please verify your email after login from my profile section.
+                                            <br/>
+            
+                                            
+                
+                                            <br/><br/>
                 
                                             We recommend that you keep your password secure and not share it with anyone.If you feel your password has been compromised, you can change it by going to your Change password page and clicking on the "Change Password" link.
                 
                                             <br/><br/>
                 
+                                            If you need help, or you have any other questions, feel free to email info@wrctpl.com, or call customer service toll-free at +91-1234567890.
+                
+                                            <br/><br/>
                 
                                            Kinky - AN online dating service
                 
@@ -327,7 +360,10 @@ router.post('/forgot-password', (req, res) => {
                                               We recommend that you keep your password secure and not share it with anyone.If you feel your password has been compromised, you can change it by going to your Change password page and clicking on the "Change Password" link.
                   
                                               <br/><br/>
-
+                  
+                                              If you need help, or you have any other questions, feel free to email info@wrctpl.com, or call customer service toll-free at +91-1234567890.
+                  
+                                              <br/><br/>
                   
                                              Kinky - AN online dating service
                   
@@ -601,6 +637,9 @@ router.post('/change-password',passport.authenticate('jwt', {session : false}), 
                   
                                               <br/><br/>
                   
+                                              If you need help, or you have any other questions, feel free to email info@wrctpl.com, or call customer service toll-free at +91-1234567890.
+                  
+                                              <br/><br/>
                   
                                              Kinky - AN online dating service
                   
@@ -1461,6 +1500,9 @@ router.post('/verify-email', passport.authenticate('jwt', { session : false }), 
                   
                                               <br/><br/>
                   
+                                              If you need help, or you have any other questions, feel free to email info@wrctpl.com, or call customer service toll-free at +91-1234567890.
+                  
+                                              <br/><br/>
                   
                                              Kinky - AN online dating service
                   
@@ -1547,11 +1589,20 @@ router.post('/load-cities', (req, res) => {
   });
 })
 
-router.post('/upload-profile-image', passport.authenticate('jwt', { session : false }), (req, res) => {
- 
+router.post('/upload-profile-image', upload.any('images'), passport.authenticate('jwt', { session : false }), (req, res) => {
+     var imageData = [];
+     for(let i = 0; i < req.files.length; i++) {
+        
+        imageData.push({
+          url: req.files[i].transforms[0].location,
+          altTag: req.files[i].transforms[0].key,
+          access: 'Private'
+        })
+     }
+  
   User.findByIdAndUpdate(
     req.user.id,
-    {$push: {images: req.body.imageData}},
+    {$push: {images: imageData}},
     {safe: true, upsert: true},
     (err, data) => {
      
@@ -1798,7 +1849,7 @@ Settings.aggregate([
       code: 200,
       info: response
     });
-  }); 
+  });
 })
 router.post('/submit-advance-search', passport.authenticate('jwt', { session : false }), (req, res) => {
   let cond = {};
@@ -1924,7 +1975,7 @@ router.post('/fetch-invetation', passport.authenticate('jwt', { session : false 
 router.post('/show_invetation_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
   const from_id = req.user.id;
-  const user = await Friendrequest.find({from_user: from_id,status:0}).populate('to_user');
+  const user = await Friendrequest.find({from_user: from_id}).populate('to_user');
   if(user){
     return res.json({
       success: true,
@@ -1947,12 +1998,10 @@ router.post('/accept', passport.authenticate('jwt', { session : false }), async 
 
    if(user.save()){
     const users = await Friendrequest.find({to_user: to_id, status: 0}).populate('from_user');
-    const users2 = await Friendrequest.find({to_user: to_id, status: 1}).populate('from_user');
     return res.json({
       success: true,
       code: 200,
       info: users,
-      results:users2,
       msg: "Request accepted"
     });
   } 
@@ -1985,18 +2034,13 @@ router.post('/friend_list', passport.authenticate('jwt', { session : false }), a
 
   const to_id = req.user.id;
 
-  const users1 = await Friendrequest.find({to_user: to_id, status: 1}).populate('from_user');
-  const users2 = await Friendrequest.find({from_user: to_id, status: 1}).populate('to_user');
-
-  const user3 = users1.concat(users2);
-
-
+  const users = await Friendrequest.find({to_user: to_id, status: 1}).populate('from_user');
   
-   if(user3){
+   if(users){
     return res.json({
       success: true,
       code: 200,
-      info: user3
+      info: users
     });
   } 
     
@@ -2006,14 +2050,13 @@ router.post('/friend_list_by_user', passport.authenticate('jwt', { session : fal
 
   const to_id = req.body.id;
 
-  const users1 = await Friendrequest.find({to_user: to_id, status: 1}).populate('from_user');
-  const users2 = await Friendrequest.find({from_user: to_id, status: 1}).populate('to_user');
-  const user3 = users1.concat(users2);
-   if(user3){
+  const users = await Friendrequest.find({to_user: to_id, status: 1}).populate('from_user');
+  
+   if(users){
     return res.json({
       success: true,
       code: 200,
-      info: user3
+      info: users
     });
   } 
     
@@ -2074,7 +2117,8 @@ if(users){
 });
 router.post('/friends_request_count', passport.authenticate('jwt', { session : false }), (req, res) => {
 
-  Friendrequest.find({to_user: req.user.id, status: 0}).count(function(err,countData){
+  
+  Friendrequest.find({to_user: req.user.id, status: 1}).count(function(err,countData){
 
     return res.json({
       success: true,
