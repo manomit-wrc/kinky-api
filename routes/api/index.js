@@ -2002,7 +2002,7 @@ router.post('/fetch-invetation', passport.authenticate('jwt', { session : false 
 router.post('/show_invetation_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
   const from_id = req.user.id;
-  const user = await Friendrequest.find({from_user: from_id}).populate('to_user');
+  const user = await Friendrequest.find({from_user: from_id, status: { $ne: 1 }}).populate('to_user');
   if(user){
     return res.json({
       success: true,
@@ -2060,8 +2060,12 @@ router.post('/reject', passport.authenticate('jwt', { session : false }), async 
 router.post('/friend_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
   const to_id = req.user.id;
+ 
+  const users = await Friendrequest.find( { status: 1 }).and([
+    { $or: [{to_user: to_id}, {from_user: to_id}] }
+]).populate('from_user').populate('to_user');
 
-  const users = await Friendrequest.find({to_user: to_id, status: 1}).populate('from_user');
+  
   
    if(users){
     return res.json({
@@ -2145,7 +2149,7 @@ if(users){
 router.post('/friends_request_count', passport.authenticate('jwt', { session : false }), (req, res) => {
 
   
-  Friendrequest.find({to_user: req.user.id, status: 1}).count(function(err,countData){
+  Friendrequest.find({to_user: req.user.id, status: { $ne: 1 }}).count(function(err,countData){
 
     return res.json({
       success: true,
