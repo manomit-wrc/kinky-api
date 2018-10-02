@@ -1758,11 +1758,18 @@ router.post('/set-as-profile', passport.authenticate('jwt', { session: false }),
   const user = await User.findById(req.user.id);
   user.avatar = req.body.imageUrl;
   user.save();
-  return res.json({
-    success: true,
-    code: 200,
-    info: user
-  });
+
+  User.update({"_id": req.user.id, "images.url": `${req.body.imageUrl}`}, {
+    $set: {"images.$.access": "Public" }}, (err, data) => {
+      User.findById(req.user.id).then(user => {
+          
+        return res.json({
+          success: true,
+          code: 200,
+          info: user
+        });
+      });
+    });
 });
 
 router.post('/search-by-username', passport.authenticate('jwt', { session : false }), async (req, res) => {
