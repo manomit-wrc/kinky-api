@@ -70,6 +70,15 @@ const userSchema = new Schema({
             access: { type: String, default: 'Private'}
         }
     ],
+    friends: [
+        {
+            friend: { type: Schema.Types.ObjectId, ref: 'User' },
+            request_by: { type: Schema.Types.ObjectId, ref: 'User' },
+            status: { type: Number, default: 0 },
+            request_date: { type: Date, default: Date.now() },
+            response_date: { type: Date }
+        }
+    ],
     status: { type: Number, default: 1},
     email_verified: { type: Number, default: 0},
     activation_link: { type: String },

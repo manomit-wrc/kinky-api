@@ -35,6 +35,16 @@ const Post = require('../../models/Post');
 const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb8', 'fde7e8364b2ba00150f43eae0851cc85');
 //end
 
+const Pusher = require('pusher');
+
+const pusher = new Pusher({
+  appId: `${process.env.PUSHER_APP_ID}`,
+  key: `${process.env.PUSHER_API_KEY}`,
+  secret: `${process.env.PUSHER_API_SECRET}`,
+  cluster: `${process.env.PUSHER_APP_CLUSTER}`,
+  encrypted: true
+});
+
 var s3 = new AWS.S3({
   accessKeyId: process.env.accessKeyId,
   secretAccessKey: process.env.secretAccessKey
@@ -513,22 +523,16 @@ router.post('/login', (req, res) => {
     
 });
 
-router.post('/logout', passport.authenticate('jwt', {session : false}), async(req,res) => {
+router.post('/logout', passport.authenticate('jwt', {session : false}), (req,res) => {
 
-UserActivity.updateOne({
-  user:req.user.id,
-  status:1
-},{
-  $set: {
-    status: 0
-  }
-}).then(user => {
+UserActivity.remove({ user: req.user.id}, (err) => {
   return res.json({
     success: true,
     code:200,
     message: "Logout successfully."
   });
 })
+
 
 });
 
@@ -1986,7 +1990,7 @@ router.post('/request_send', passport.authenticate('jwt', { session : false }), 
       success: true,
       code: 200,
       status: 0,
-      info: "Request send successfully"
+      info: "Request sent successfully"
     });
   }
     
@@ -2133,7 +2137,7 @@ router.post('/friend_remove', passport.authenticate('jwt', { session : false }),
       success: true,
       code: 200,
       info: users, 
-      msg: 'Request withdraw successfully'
+      msg: 'Friend removed from list'
     });
   }  
     
@@ -2230,6 +2234,24 @@ router.post("/change-image-details", passport.authenticate('jwt', { session : fa
           });
         })
 });
+})
+
+router.post("/check-loggedin", passport.authenticate('jwt', { session : false }), async (req, res) => {
+  const user = await UserActivity.find({ user: req.body.user_id });
+  
+  if(user.length > 0) {
+    pusher.trigger("events-channel", "check-logged-in", {
+      status: 1,
+      user_id: req.body.user_id
+    });
+  }
+  else {
+    pusher.trigger("events-channel", "check-logged-in", {
+      status: 0,
+      user_id: req.body.user_id
+    });
+  }
+  return res.json({ success: true });
 })
 
 
