@@ -89,7 +89,7 @@ var video = multer({
 router.post('/signup',  async (req, res) => {
       const current_date = new Date();
       const new_date = new Date(req.body.yyyy, req.body.mm - 1 , req.body.dd + 1);
-
+      const activation_link = crypto.randomBytes(64).toString('hex');
       const year_diff = diff_years(current_date,new_date);
       if(year_diff < 18) {
         return res.json({ success: false, code: 403, message: 'Minimum age require 18 years.'});
@@ -112,7 +112,8 @@ router.post('/signup',  async (req, res) => {
             gender: req.body.gender,
             dd: req.body.dd,
             mm: req.body.mm,
-            yyyy: req.body.yyyy
+            yyyy: req.body.yyyy,
+            activation_link
           });
     
           bcrypt.genSalt(10, (err, salt) => {
@@ -157,12 +158,7 @@ router.post('/signup',  async (req, res) => {
                     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
                 
                     <title>Registration Notification</title>
-                
-                    
-                  Settings.findOne({ user: user._id })
-                  .then(settings => {
-
-                  })<style>
+                <style>
                 
                         body {
                 
@@ -217,22 +213,20 @@ router.post('/signup',  async (req, res) => {
                                         <span style="font-size: 12px; line-height: 1.5; color: #333333;">
                 
                                           Hi ${user.username}, <br/>    
-                                          Thank you for register with us.
-                
-                                            <br/><br/>
-                
-                                            Please verify your email after login from my profile section.
-                                            <br/>
-            
-                                            
-                
-                                            <br/><br/>
+                                          Please click on the below link to verify your email
+                  
+                                          <br/><br/>
+              
+                                          <a href="${process.env.FRONT_END_URL}/verify/${user.activation_link}">Click here to verify</a>
+                                          <br/>
+          
+                                          
+              
+                                          <br/><br/>
                 
                                             We recommend that you keep your password secure and not share it with anyone.If you feel your password has been compromised, you can change it by going to your Change password page and clicking on the "Change Password" link.
                 
-                                            <br/><br/>
-                
-                                            If you need help, or you have any other questions, feel free to email info@wrctpl.com, or call customer service toll-free at +91-1234567890.
+                                           
                 
                                             <br/><br/>
                 
@@ -386,9 +380,6 @@ router.post('/forgot-password', (req, res) => {
                   
                                               <br/><br/>
                   
-                                              If you need help, or you have any other questions, feel free to email info@wrctpl.com, or call customer service toll-free at +91-1234567890.
-                  
-                                              <br/><br/>
                   
                                              Kinky - AN online dating service
                   
@@ -655,11 +646,7 @@ router.post('/change-password',passport.authenticate('jwt', {session : false}), 
                                               We recommend that you keep your password secure and not share it with anyone.If you feel your password has been compromised, you can change it by going to your Change password page and clicking on the "Change Password" link.
                   
                                               <br/><br/>
-                  
-                                              If you need help, or you have any other questions, feel free to email info@wrctpl.com, or call customer service toll-free at +91-1234567890.
-                  
-                                              <br/><br/>
-                  
+
                                              Kinky - AN online dating service
                   
                                           </span>
@@ -1519,10 +1506,7 @@ router.post('/verify-email', passport.authenticate('jwt', { session : false }), 
                   
                                               <br/><br/>
                   
-                                              If you need help, or you have any other questions, feel free to email info@wrctpl.com, or call customer service toll-free at +91-1234567890.
-                  
-                                              <br/><br/>
-                  
+                                             
                                              Kinky - AN online dating service
                   
                                           </span>
@@ -1860,7 +1844,15 @@ router.post('/submit-quick-search', passport.authenticate('jwt', { session : fal
 
 
 Settings.aggregate([
-    { "$match": settingCond },
+  { "$match":{ "$match": { 
+                "$and": [ 
+                  { "distance": req.body.distance}, { "country": req.body.country},{ "state": req.body.state},
+                    {
+                        "$or":[{ "looking_for_male": req.body.looking_for_male}, { "looking_for_female": req.body.looking_for_female},{ "looking_for_couple": req.body.looking_for_couple},{ "looking_for_cd": req.body.looking_for_cd}] 
+                    }]
+                }
+                }
+},
     { "$match": { "user": { "$ne": new mongoose.Types.ObjectId(req.user.id ) } } },
     {
       "$lookup": {
@@ -1878,7 +1870,7 @@ Settings.aggregate([
           "as": "friend_request"
       }
     },
-    { "$match": cond },/* 
+  /* 
     {"$match":{ $or: [{ 'friend_request.from_user': req.user.id }, { 'friend_request.to_user': req.user.id }] }}, */
   ]).exec((err, response) => {
     
@@ -2092,7 +2084,9 @@ router.post('/friend_list_by_user', passport.authenticate('jwt', { session : fal
 
   const to_id = req.body.id;
 
-  const users = await Friendrequest.find({to_user: to_id, status: 1}).populate('from_user');
+  const users = await Friendrequest.find( { status: 1 }).and([
+    { $or: [{to_user: to_id}, {from_user: to_id}] }
+]).populate('from_user').populate('to_user');
   
    if(users){
     return res.json({
