@@ -1420,6 +1420,8 @@ const arr = ['Shaved', 'Smooth', 'Trimmed', 'Natural', 'Wild', 'I will tell you 
   res.send("End")
 });  */
 
+
+
 router.post('/verify-email', passport.authenticate('jwt', { session : false }), async (req, res) => {
   const user = await User.findById(req.user.id);
   const activation_link = crypto.randomBytes(64).toString('hex');
@@ -1853,20 +1855,9 @@ Settings.aggregate([
 })
 router.post('/submit-advance-search', passport.authenticate('jwt', { session : false }), (req, res) => {
   let cond = {};
+  /* let cond = {};
   let settingCond = {};
 
-  if(req.body.looking_for_male){
-    settingCond.looking_for_male = req.body.looking_for_male;
-  }
-  if(req.body.looking_for_female){
-    settingCond.looking_for_female = req.body.looking_for_female;
-  }
-  if(req.body.looking_for_couple){
-    settingCond.looking_for_couple = req.body.looking_for_couple;
-  }
-  if(req.body.looking_for_cd){
-    settingCond.looking_for_cd = req.body.looking_for_cd;
-  }
   
   if(req.body.distance){
     settingCond.distance = parseInt(req.body.distance);
@@ -1886,7 +1877,8 @@ router.post('/submit-advance-search', passport.authenticate('jwt', { session : f
   
   if(req.body.gender) {
     cond["user.gender"] = req.body.gender;
-  }
+  }*/
+
   if(req.body.ethnicity) {
     cond["user.ethnicity"] = new mongoose.Types.ObjectId(req.body.ethnicity);
   }
@@ -1901,12 +1893,24 @@ router.post('/submit-advance-search', passport.authenticate('jwt', { session : f
   }
   if(req.body.build) {
     cond["user.build"] = new mongoose.Types.ObjectId(req.body.build);
+  } 
+
+  var match =  { $match: { 
+    $and: [ 
+        { distance: parseInt(req.body.distance), country: req.body.country, state: req.body.state,from_age:req.body.from_age,to_age:req.body.to_age,user: { $ne: new mongoose.Types.ObjectId(req.user.id ) } },  
+         {
+            $or:[{looking_for_male: req.body.looking_for_male},
+                 {looking_for_female: req.body.looking_for_female},
+                 {looking_for_couple: req.body.looking_for_couple},
+                 {looking_for_cd: req.body.looking_for_cd}] 
+        } ]
+    }
   }
 
 
+
   Settings.aggregate([
-    { "$match": settingCond },
-    { "$match": { "user": { "$ne": new mongoose.Types.ObjectId(req.user.id ) } } },
+    match,
     {
       "$lookup": {
           "from": "users",
@@ -1923,7 +1927,7 @@ router.post('/submit-advance-search', passport.authenticate('jwt', { session : f
           "as": "friend_request"
       }
     },
-    { "$match": cond }
+    { "$match": cond },
   ]).exec((err, response) => {
     return res.json({
       success: true,
@@ -2182,6 +2186,7 @@ const post = await Post.find({user:req.user.id}).populate('user');
    }
 
 });
+
 
 router.post("/change-image-details", passport.authenticate('jwt', { session : false }), async (req, res) => {
   User.update({"_id": req.user.id, "images.url": `${req.body.imageUrl}`}, 
