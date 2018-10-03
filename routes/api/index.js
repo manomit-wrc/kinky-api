@@ -1927,7 +1927,7 @@ router.post('/submit-advance-search', passport.authenticate('jwt', { session : f
           "as": "friend_request"
       }
     },
-    { "$match": cond },
+    { $match: cond },
   ]).exec((err, response) => {
     return res.json({
       success: true,
