@@ -79,6 +79,11 @@ const userSchema = new Schema({
             response_date: { type: Date }
         }
     ],
+    hotlist: [
+        {
+            type: Schema.Types.ObjectId, ref: 'User'
+        }
+    ],
     status: { type: Number, default: 1},
     email_verified: { type: Number, default: 0},
     activation_link: { type: String },
