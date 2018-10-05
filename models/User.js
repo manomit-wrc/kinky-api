@@ -80,9 +80,8 @@ const userSchema = new Schema({
         }
     ],
     hotlist: [
-        {
-            type: Schema.Types.ObjectId, ref: 'User'
-        }
+         { type: Schema.Types.ObjectId, ref: 'User' }
+        
     ],
     status: { type: Number, default: 1},
     email_verified: { type: Number, default: 0},

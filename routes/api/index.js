@@ -1098,15 +1098,17 @@ router.post('/interest-update',passport.authenticate('jwt', {session : false}), 
   });
   try {
     Settings.update({ user: req.user.id }, req.body , { upsert: true, setDefaultsOnInsert: true } , (err, data) => {
+      User.findOne({ _id: req.user.id }).then(datas => {
       Settings.findOne({ user: req.user.id }).then(data => {
         return res.json({
           success: true,
           message:"updated successfull",
           code: 200,
-          settings: data
+          settings: data,
+          info:datas
         })
       })
-      
+      })
     })
   
   }
@@ -1300,6 +1302,8 @@ router.post('/personal-details-update', passport.authenticate('jwt', { session :
       settings.looking_for_female = user.looking_for_female; 
       settings.looking_for_couple = user.looking_for_couple; 
       settings.looking_for_cd = user.looking_for_cd; 
+      settings.country = user.country;
+      settings.state = user.state;
       settings.save();
       return res.json({
         success: true,
@@ -1314,7 +1318,9 @@ router.post('/personal-details-update', passport.authenticate('jwt', { session :
         looking_for_male : user.looking_for_male, 
       looking_for_female : user.looking_for_female, 
       looking_for_couple : user.looking_for_couple, 
-      looking_for_cd : user.looking_for_cd
+      looking_for_cd : user.looking_for_cd,
+      country : user.country,
+      state : user.state,
        })
        settings.save();
        return res.json({
@@ -2314,7 +2320,7 @@ router.post('/similar_profile', passport.authenticate('jwt', { session : false }
 
   const user_details = await User.findOne({_id:req.body.to_id});
 
-const users = await User.find({gender: user_details.gender , looking_for_male: user_details.looking_for_male,looking_for_female: user_details.looking_for_female,looking_for_couple: user_details.looking_for_couple,looking_for_cd: user_details.looking_for_cd,_id:{$ne:user_details._id}});
+const users = await User.find({gender: user_details.gender,_id:{$ne:user_details._id}});
 
 
   
@@ -2336,7 +2342,10 @@ router.post('/saveTohotlist', passport.authenticate('jwt', { session : false }),
  const user_id = req.body.to_id;
  const user = await User.findOne({_id: req.user.id});
 if(flag == true){
-  User.update({ _id: req.user.id }, req.body , { upsert: true, setDefaultsOnInsert: true } , (err, data) => {
+User.findOneAndUpdate(
+   { _id: req.user.id }, 
+   { $push: { hotlist: new mongoose.Types.ObjectId(req.body.hotlist)  } },
+  function (error, success) {
     User.findById(req.user.id).then(user => {
           
       return res.json({
@@ -2425,6 +2434,48 @@ router.post('/friend_list', passport.authenticate('jwt', { session : false }), a
     
 
 });
+router.post('/hot_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
+ const user_list=[];
+ const user = await User.findById(req.user.id);
+  for(let i =0; i<user.hotlist.length;i++){
+    
+    user_list.push(await User.findById(user.hotlist[i]));
+
+
+  }
+
+  
+    if(user_list){
+    return res.json({
+      success: true,
+      code: 200,
+      info: user_list
+    });
+  } 
+     
+
+});
+router.post('/hot_list_by_user', passport.authenticate('jwt', { session : false }), async (req, res) => {
+ const user_list=[];
+ const user = await User.findById(req.body.id);
+  for(let i =0; i<user.hotlist.length;i++){
+    
+    user_list.push(await User.findById(user.hotlist[i]));
+
+
+  }
+
+  
+    if(user_list){
+    return res.json({
+      success: true,
+      code: 200,
+      info: user_list
+    });
+  } 
+     
+
+});
 router.post('/friend_list_by_user', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
   const to_id = req.body.id;
@@ -2467,10 +2518,10 @@ router.post('/friend_remove', passport.authenticate('jwt', { session : false }),
   const to_id = req.body.to_id;
   const from_id = req.user.id;
 
-  const user = await Friendrequest.findOne({from_user:from_id,to_user:to_id});
+  const user = await Friendrequest.findOne({ $or:[ {'from_user':from_id}, {'to_user':to_id},{'from_user':to_id},{'to_user':from_id} ] });
+
   
-  
-   if(user.remove()){
+    if(user.remove()){
   const users = await Friendrequest.find({to_user: to_id}).populate('from_user');
     return res.json({
       success: true,
@@ -2478,7 +2529,7 @@ router.post('/friend_remove', passport.authenticate('jwt', { session : false }),
       info: users, 
       msg: 'Friend removed from list'
     });
-  }  
+  }   
     
 
 });
