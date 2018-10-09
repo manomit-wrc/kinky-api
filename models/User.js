@@ -26,6 +26,8 @@ const userSchema = new Schema({
     sexuality: { type: String },
     sexuality_female: { type: String },
     country: { type: String },
+    lat: {type:Number},
+    lon: {type:Number},
     state: { type: String  },
     description: { type: String, default: '' },
     headline: { type: String, default: '' },
@@ -83,11 +85,16 @@ const userSchema = new Schema({
          { type: Schema.Types.ObjectId, ref: 'User' }
         
     ],
+    loc :  { type: {type:String}, coordinates: [Number]},
+    likes:[
+        { type: Schema.Types.ObjectId, ref: 'User' }
+       
+   ],
     status: { type: Number, default: 1},
     email_verified: { type: Number, default: 0},
     activation_link: { type: String },
     created_at : { type: Date, default : Date.now()}
 
 });
-
+userSchema.index({ "loc": "2dsphere" });
 module.exports = mongoose.model('User', userSchema);

@@ -107,6 +107,10 @@ router.post('/signup',  async (req, res) => {
           const newUser = new User({
             username: req.body.username,
             email: req.body.email,
+            loc: { 
+            type: "Point",
+            coordinates: [req.body.lon, req.body.lat]
+          },
             avatar,
             password: req.body.password,
             gender: req.body.gender,
@@ -448,8 +452,6 @@ router.post('/count-online-user' ,passport.authenticate('jwt', {session : false}
 
 
 router.post('/login', (req, res) => {
-
-  console.log(req.body.ip);
     const username = req.body.username;
     const password = req.body.password;
 
@@ -459,6 +461,9 @@ router.post('/login', (req, res) => {
     if (!user) {
         return res.json({ success: false, code: 404, message: 'Username or Password is wrong.'});
     }
+    user.loc.coordinates = [req.body.lon,req.body.lat];
+    user.loc.type = "Point";
+    user.save();
 
     // Check Password
     
@@ -1428,301 +1433,29 @@ const arr = ['Shaved', 'Smooth', 'Trimmed', 'Natural', 'Wild', 'I will tell you 
 
   router.get('/test-upload', async(req, res) =>{
 
-  const from_user = await User.findOne({_id: '5b98f7eb54f5af2a38cc3bf0'});
-  //console.log(from_user);
+  const user = await User.findOne({_id: '5b98f7eb54f5af2a38cc3bf0'});
 
-        let seeking_for = from_user.looking_for_male ? 'Male,': '';
-        seeking_for += from_user.looking_for_female ? 'Female,': '';
-        seeking_for += from_user.looking_for_couple ? 'Couple,': '';
-        seeking_for += from_user.looking_for_cd ? ' CD/TV/TS,': '';
+  User.aggregate(
+    [
+        { "$geoNear": {
+            "near": {
+                "type": "Point",
+                "coordinates": user.loc.coordinates
+            },
+            "distanceField": "distance",
+            "spherical": true,
+            "query": { gender: user.gender, _id: { $ne: user._id } }
+        }},
+        { "$sort": { "distance": 1 } }
+    ],
+    function(err,results) {
+console.log('====================================');
 
-        seeking_for = seeking_for.substring(0, seeking_for.length - 1);
-        let interested_in = from_user.interested_in;
-         let avatar = from_user.avatar !== undefined ? from_user.avatar: null;
-        let name = from_user.username;
-        let gender = from_user.gender !== undefined ? from_user.gender : 'N/A';
-        let sexuality = from_user.sexuality !== undefined ? from_user.sexuality : 'N/A';
-        let sexuality_female = from_user.sexuality_female !== undefined ? from_user.sexuality_female : 'N/A';
-        let age = getAge(from_user.mm +"/"+from_user.dd +"/"+from_user.yyyy );
-        let age_female = getAge(from_user.mm_female +"/"+from_user.dd_female +"/"+from_user.yyyy_female );
-        let email_verified;
-         if(from_user.email_verified) {
-        let email_verified = true;
-      }
-      const to_user = await User.findOne({_id: req.body.to_id});
-  var email_body = `<!DOCTYPE html>
-  <html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
-  <head>
-    <meta charset="utf-8"> <!-- utf-8 works for most cases -->
-    <meta name="viewport" content="width=device-width"> <!-- Forcing initial-scale shouldn't be necessary -->
-    <meta http-equiv="X-UA-Compatible" content="IE=edge"> <!-- Use the latest (edge) version of IE rendering engine -->
-    <meta name="x-apple-disable-message-reformatting">  <!-- Disable auto-scale in iOS 10 Mail entirely -->
-    <title>Kynky</title> <!-- The title tag shows in email notifications, like Android 4.4. -->
-  
-  
-  
-    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,500" rel="stylesheet">
-    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
-  
-    <!--<![endif]-->
-  
-  
-    <!-- CSS Reset -->
-    <style>
-  
-    /* What it does: Remove spaces around the email design added by some email clients. */
-    /* Beware: It can remove the padding / margin and add a background color to the compose a reply window. */
-    html,
-    body {
-      margin: 0 auto !important;
-      padding: 0 !important;
-      height: 100% !important;
-      width: 100% !important;
+console.log(results);
+console.log('====================================');
     }
-  
-    /* What it does: Stops email clients resizing small text. */
-    * {
-      -ms-text-size-adjust: 100%;
-      -webkit-text-size-adjust: 100%;
-    }
-  
-    /* What it does: Centers email on Android 4.4 */
-    div[style*="margin: 16px 0"] {
-      margin:0 !important;
-    }
-  
-    /* What it does: Stops Outlook from adding extra spacing to tables. */
-    table,
-    td {
-      mso-table-lspace: 0pt !important;
-      mso-table-rspace: 0pt !important;
-    }
-  
-    /* What it does: Fixes webkit padding issue. Fix for Yahoo mail table alignment bug. Applies table-layout to the first 2 tables then removes for anything nested deeper. */
-    table {
-      border-spacing: 0 !important;
-      border-collapse: collapse !important;
-      table-layout: fixed !important;
-      margin: 0 auto !important;
-    }
-    table table table {
-      table-layout: auto;
-    }
-  
-    /* What it does: Uses a better rendering method when resizing images in IE. */
-    img {
-      -ms-interpolation-mode:bicubic;
-    }
-  
-    /* What it does: A work-around for email clients meddling in triggered links. */
-    *[x-apple-data-detectors],	/* iOS */
-    .x-gmail-data-detectors, 	/* Gmail */
-    .x-gmail-data-detectors *,
-    .aBn {
-      border-bottom: 0 !important;
-      cursor: default !important;
-      color: inherit !important;
-      text-decoration: none !important;
-      font-size: inherit !important;
-      font-family: inherit !important;
-      font-weight: inherit !important;
-      line-height: inherit !important;
-    }
-  
-    /* What it does: Prevents Gmail from displaying an download button on large, non-linked images. */
-    .a6S {
-      display: none !important;
-      opacity: 0.01 !important;
-    }
-    /* If the above doesn't work, add a .g-img class to any image in question. */
-    img.g-img + div {
-      display:none !important;
-    }
-  
-    /* What it does: Prevents underlining the button text in Windows 10 */
-    .button-link {
-      text-decoration: none !important;
-    }
-  
-    .progress-circle.progress-70:after {
-      background-image: linear-gradient(-18deg, #9cad4f 50%, transparent 50%, transparent), linear-gradient(270deg, #9cad4f 50%, #fff 50%, #fff);
-    }
-  
-    .progress-circle:after {
-      content: '';
-      display: inline-block;
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      -webkit-border-radius: 50%;
-      -moz-border-radius: 50%;
-      -ms-animation: colorload 2s;
-      -o-animation: colorload 2s;
-      animation: colorload 2s;
-    }
+)
 
-    .save-btn {
-      border-radius:5px; -webkit-border-radius:5px; -moz-border-radius:5px; -o-border-radius:5px;
-    }
-  
-    /* What it does: Removes right gutter in Gmail iOS app: https://github.com/TedGoas/Cerberus/issues/89  */
-    /* Create one of these media queries for each additional viewport size you'd like to fix */
-    /* Thanks to Eric Lepetit @ericlepetitsf) for help troubleshooting */
-    @media only screen and (min-device-width: 375px) and (max-device-width: 413px) { /* iPhone 6 and 6+ */
-      .email-container {
-        min-width: 375px !important;
-      }
-    }
-  
-  </style>
-  
-  <!-- Progressive Enhancements -->
-  <style>
-  
-  /* Media Queries */
-  @media screen and (max-width: 480px) {
-  
-    /* What it does: Forces elements to resize to the full width of their container. Useful for resizing images beyond their max-width. */
-    .fluid {
-      width: 100% !important;
-      max-width: 100% !important;
-      height: auto !important;
-      margin-left: auto !important;
-      margin-right: auto !important;
-    }
-  
-    /* What it does: Forces table cells into full-width rows. */
-    .stack-column,
-    .stack-column-center {
-      display: block !important;
-      width: 100% !important;
-      max-width: 100% !important;
-      direction: ltr !important;
-    }
-    /* And center justify these ones. */
-    .stack-column-center {
-      text-align: center !important;
-    }
-  
-    /* What it does: Generic utility class for centering. Useful for images, buttons, and nested tables. */
-    .center-on-narrow {
-      text-align: center !important;
-      display: block !important;
-      margin-left: auto !important;
-      margin-right: auto !important;
-      float: none !important;
-    }
-    table.center-on-narrow {
-      display: inline-block !important;
-    }
-  
-    /* What it does: Adjust typography on small screens to improve readability */
-    .email-container p {
-      font-size: 17px !important;
-      line-height: 22px !important;
-    }
-  }
-  
-  </style>
-  
-  
-  </head>
-  <body width="100%" style="margin: 0; mso-line-height-rule: exactly;">
-    <center style="width: 100%; text-align: left;">
-  
-      <div style="max-width: 680px; margin: auto;" class="email-container">
-  
-        <!-- Email Body : BEGIN -->
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="100%" style="max-width: 680px;" class="email-container">
-  
-          <!-- INTRO : BEGIN -->
-          <tr>
-            <td bgcolor="#f4f4f4">
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                <tr>
-                  <td style="padding: 0 40px 20px 40px; font-family: sans-serif; font-size: 15px; line-height: 25px; color: #555555; text-align: left; font-weight:normal;">
-                    <div style="width: 100%; position: relative; background: #f4f4f4; padding: 15px; border-radius: 6px;" class="profile-left-top-box">
-                      <div class="profile-left-details-box">
-                        <div style="width: 170px; display: block; margin: 0 auto; border-radius: 100%;" class="profile-left-img">
-                          <div style="background: #fff; width: 100px; height: auto; margin: 0 23px; display: inline-block; vertical-align: top; text-align: center; width: 170px; height: auto; background: none; margin: 0;" class="box-circle hidden-xxs">
-                            <div style="width: 170px; height: 170px; background-color: #fff; border-radius: 50%; -webkit-border-radius: 50%; -moz-border-radius: 50%; display: inline-block; position: relative;
-                            " class="progress-circle progress-70">
-                            <span style="background: #fff none repeat scroll 0 0; border-radius: 100%; -webkit-border-radius: 100%; -moz-border-radius: 100%; color: #8b8b8b; display: block; font-size: 1.5rem; left: 32%; line-height: 60px; margin-left: -44px; margin-top: -46px; position: absolute; text-align: center; top: 32%; width: 151px; z-index: 1;">
-                              <img style="display: block;width: 100%;border-radius: 100%;-webkit-border-radius: 100%;-moz-border-radius: 100%;" src="${avatar}" alt="">
-                            </span> 
-                          </div>
-                        </div>
-                        <p style="text-align: center;color: #9cad4f; font-size: 14px; margin-top: 15px;"><strong style="font-size: 18px; display: block; font-weight: bold;">70%</strong> Matched</p>
-                      </div>
-                      <div style="text-align: center; display: inline-block; vertical-align: top; padding-left: 0; width: 100%;" class="profile-top-text">
-                        <h5 style="font-size: 18px; font-weight: 600; margin: 0;"><a style="color: #d1832b; text-decoration: none;" href="#">${name}</a></h5>
-                        <p style="margin: 5px 0; font-weight: 600;"><i style="color: #929292; margin-right: 5px; font-size: 16px;" class="fa fa-map-marker"></i>${from_user.state},${from_user.country}</p>
-                        <p style="margin: 5px 0; font-weight: 600;"><i style="color: #929292; margin-right: 5px; font-size: 16px;" class="fa fa-mars"></i>${age} ${sexuality}</p>
-                        
-                        <p style="margin: 5px 0; font-weight: 600;">
-                          <a style="color: #558fa0; font-weight: 400; text-decoration: none;" href="javascript:void(0)">Reviews 0</a> 
-                          <strong style="font-weight: 400; color: #929292;">|</strong> 
-                          <a style="color: #558fa0; font-weight: 400; text-decoration: none;" href="javascript:void(0)"><span>${email_verified?"Email Verified":"Email Unverified"}</span></a>
-                        </p>
-                        <p style="margin: 5px 0; font-weight: 600;"><em style="font-weight: 400; color: #929292;">Seeking ${seeking_for}</em></p>
-                        <p style="margin: 5px 0; font-weight: 600;"><a style="color: #558fa0; font-weight: 400; text-decoration: none;" href="javascript:void(0)">${interested_in} </a></p>
-                      </div>
-                      <a style="width:130px; height:35px; border:none; text-align:center; background: rgba(29,9,12,1); background: -moz-linear-gradient(left, rgba(29,9,12,1) 0%, rgba(133,35,53,1) 100%); background: -webkit-gradient(left top, right top, color-stop(0%, rgba(29,9,12,1)), color-stop(100%, rgba(133,35,53,1))); background: -webkit-linear-gradient(left, rgba(29,9,12,1) 0%, rgba(133,35,53,1) 100%); background: -o-linear-gradient(left, rgba(29,9,12,1) 0%, rgba(133,35,53,1) 100%); background: -ms-linear-gradient(left, rgba(29,9,12,1) 0%, rgba(133,35,53,1) 100%); background: linear-gradient(to right, rgba(29,9,12,1) 0%, rgba(133,35,53,1) 100%); filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1d090c', endColorstr='#852335', GradientType=1 ); border-radius:5px; -webkit-border-radius:5px; -moz-border-radius:5px; -o-border-radius:5px; color:#fff; text-transform:capitalize; font-weight:600; font-size:16px; border: 1px solid transparent; cursor: pointer; display: table; margin: 0 auto; margin-top: 15px; outline: none;" class="save-btn usertimeline-send-btn" href="${process.env.FRONT_END_URL}/user-timeline/${from_user._id}">View Details</a>
-                    </div>
-                  </div>                     
-                </td>
-              </tr>
-              
-            </table>
-          </td>
-        </tr>
-
-        <tr>
-                  
-                                      <td align="left" valign="top" colspan="2" style="padding-top: 10px;">
-                  
-                                          <span style="font-size: 12px; line-height: 1.5; color: #333333;">
-                                          
-                   If you need help, or you have any other questions, feel free to email info@wrctpl.com, or call customer service toll-free at +91-1234567890.
-                                              <br/><br/>
-                  
-                                             
-                                             Kinky - AN online dating service
-                  
-                                          </span>
-                  
-                                      </td>
-                  
-                                  </tr>
-        <!-- INTRO : END -->
-  
-      </table>
-      <!-- Email Body : END -->
-    </div>
-  
-  </center>
-  </body>
-  </html> `;
-
-var sendEmail = Mailjet.post('send');
-
-var emailData = {
-'FromEmail': 'info@wrctpl.com',
-'FromName': 'Kinky - An online dating service',
-'Subject': 'New Friend Request',
-'Html-part': email_body,
-'Recipients': [{'Email': 'amir@wrctpl.com'}]
-};
-
-if(sendEmail.request(emailData)) {
-
-res.json({
-success: true, 
-code: 200, 
-message: 'Please check your email to verify your account.'
-});
-
-}
   });
 
 router.post('/verify-email', passport.authenticate('jwt', { session : false }), async (req, res) => {
@@ -2249,12 +1982,302 @@ router.post('/request_send', passport.authenticate('jwt', { session : false }), 
   const from_id = req.user.id;
   const to_id = req.body.to_id;
 
+  const user_id = req.body.to_id;
+  const user = await User.findOne({_id: req.user.id});
+  const to_user_details = await User.findOne({_id: user_id});
+
   const sendRequest = new Friendrequest({
     from_user : from_id,
     to_user : to_id,
     requested_add : new Date()
   });
   if (sendRequest.save()){
+    let seeking_for = user.looking_for_male ? 'Male,': '';
+    seeking_for += user.looking_for_female ? 'Female,': '';
+    seeking_for += user.looking_for_couple ? 'Couple,': '';
+    seeking_for += user.looking_for_cd ? ' CD/TV/TS,': '';
+
+    seeking_for = seeking_for.substring(0, seeking_for.length - 1);
+    let interested_in = user.interested_in;
+     let avatar = user.avatar !== undefined ? user.avatar: null;
+    let name = user.username;
+    let gender = user.gender !== undefined ? user.gender : 'N/A';
+    let sexuality = user.sexuality !== undefined ? user.sexuality : 'N/A';
+    let sexuality_female = user.sexuality_female !== undefined ? user.sexuality_female : 'N/A';
+    let age = getAge(user.mm +"/"+user.dd +"/"+user.yyyy );
+    let age_female = getAge(user.mm_female +"/"+user.dd_female +"/"+user.yyyy_female );
+
+    let email_verified;
+     if(user.email_verified) {
+    let email_verified = true;
+  }
+var email_body = `<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8"> <!-- utf-8 works for most cases -->
+<meta name="viewport" content="width=device-width"> <!-- Forcing initial-scale shouldn't be necessary -->
+<meta http-equiv="X-UA-Compatible" content="IE=edge"> <!-- Use the latest (edge) version of IE rendering engine -->
+<meta name="x-apple-disable-message-reformatting">  <!-- Disable auto-scale in iOS 10 Mail entirely -->
+<title>Kynky</title> <!-- The title tag shows in email notifications, like Android 4.4. -->
+
+
+
+<link href="https://fonts.googleapis.com/css?family=Montserrat:300,500" rel="stylesheet">
+<link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+<!--<![endif]-->
+
+
+<!-- CSS Reset -->
+<style>
+
+/* What it does: Remove spaces around the email design added by some email clients. */
+/* Beware: It can remove the padding / margin and add a background color to the compose a reply window. */
+html,
+body {
+  margin: 0 auto !important;
+  padding: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+/* What it does: Stops email clients resizing small text. */
+* {
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* What it does: Centers email on Android 4.4 */
+div[style*="margin: 16px 0"] {
+  margin:0 !important;
+}
+
+/* What it does: Stops Outlook from adding extra spacing to tables. */
+table,
+td {
+  mso-table-lspace: 0pt !important;
+  mso-table-rspace: 0pt !important;
+}
+
+/* What it does: Fixes webkit padding issue. Fix for Yahoo mail table alignment bug. Applies table-layout to the first 2 tables then removes for anything nested deeper. */
+table {
+  border-spacing: 0 !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+  margin: 0 auto !important;
+}
+table table table {
+  table-layout: auto;
+}
+
+/* What it does: Uses a better rendering method when resizing images in IE. */
+img {
+  -ms-interpolation-mode:bicubic;
+}
+
+/* What it does: A work-around for email clients meddling in triggered links. */
+*[x-apple-data-detectors],	/* iOS */
+.x-gmail-data-detectors, 	/* Gmail */
+.x-gmail-data-detectors *,
+.aBn {
+  border-bottom: 0 !important;
+  cursor: default !important;
+  color: inherit !important;
+  text-decoration: none !important;
+  font-size: inherit !important;
+  font-family: inherit !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+}
+
+/* What it does: Prevents Gmail from displaying an download button on large, non-linked images. */
+.a6S {
+  display: none !important;
+  opacity: 0.01 !important;
+}
+/* If the above doesn't work, add a .g-img class to any image in question. */
+img.g-img + div {
+  display:none !important;
+}
+
+/* What it does: Prevents underlining the button text in Windows 10 */
+.button-link {
+  text-decoration: none !important;
+}
+
+.progress-circle.progress-70:after {
+  background-image: linear-gradient(-18deg, #9cad4f 50%, transparent 50%, transparent), linear-gradient(270deg, #9cad4f 50%, #fff 50%, #fff);
+}
+
+.progress-circle:after {
+  content: '';
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  -webkit-border-radius: 50%;
+  -moz-border-radius: 50%;
+  -ms-animation: colorload 2s;
+  -o-animation: colorload 2s;
+  animation: colorload 2s;
+}
+
+.save-btn {
+  border-radius:5px; -webkit-border-radius:5px; -moz-border-radius:5px; -o-border-radius:5px;
+}
+
+/* What it does: Removes right gutter in Gmail iOS app: https://github.com/TedGoas/Cerberus/issues/89  */
+/* Create one of these media queries for each additional viewport size you'd like to fix */
+/* Thanks to Eric Lepetit @ericlepetitsf) for help troubleshooting */
+@media only screen and (min-device-width: 375px) and (max-device-width: 413px) { /* iPhone 6 and 6+ */
+  .email-container {
+    min-width: 375px !important;
+  }
+}
+
+</style>
+
+<!-- Progressive Enhancements -->
+<style>
+
+/* Media Queries */
+@media screen and (max-width: 480px) {
+
+/* What it does: Forces elements to resize to the full width of their container. Useful for resizing images beyond their max-width. */
+.fluid {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* What it does: Forces table cells into full-width rows. */
+.stack-column,
+.stack-column-center {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  direction: ltr !important;
+}
+/* And center justify these ones. */
+.stack-column-center {
+  text-align: center !important;
+}
+
+/* What it does: Generic utility class for centering. Useful for images, buttons, and nested tables. */
+.center-on-narrow {
+  text-align: center !important;
+  display: block !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  float: none !important;
+}
+table.center-on-narrow {
+  display: inline-block !important;
+}
+
+/* What it does: Adjust typography on small screens to improve readability */
+.email-container p {
+  font-size: 17px !important;
+  line-height: 22px !important;
+}
+}
+
+</style>
+
+
+</head>
+<body width="100%" style="margin: 0; mso-line-height-rule: exactly;">
+<center style="width: 100%; text-align: left;">
+
+  <div style="max-width: 980px; margin: auto;" class="email-container">
+
+    <!-- Email Body : BEGIN -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="100%" style="max-width: 980px;" class="email-container">
+
+      <!-- INTRO : BEGIN -->
+      <tr>
+        <td bgcolor="#f4f4f4">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <td style="padding: 0 0px 20px 0px; font-family: sans-serif; font-size: 15px; line-height: 25px; color: #555555; text-align: left; font-weight:normal;">
+                <div style="width: 100%; position: relative; background: #f4f4f4; padding: 15px; border-radius: 6px;" class="profile-left-top-box">
+                  <div class="profile-left-details-box">
+                    <div style="width: 170px; display: block; margin: 0 auto; border-radius: 100%;" class="profile-left-img">
+                      <div style="background: #fff; width: 100px; height: auto; margin: 0 23px; display: inline-block; vertical-align: top; text-align: center; width: 170px; height: auto; background: none; margin: 0;" class="box-circle hidden-xxs">
+                        <div style="width: 170px; height: 170px; background-color: #fff; border-radius: 50%; -webkit-border-radius: 50%; -moz-border-radius: 50%; display: inline-block; position: relative;
+                        " class="progress-circle progress-70">
+                        <span style="background: #fff none repeat scroll 0 0; border-radius: 100%; -webkit-border-radius: 100%; -moz-border-radius: 100%; color: #8b8b8b; display: block; font-size: 1.5rem; left: 32%; line-height: 60px; margin-left: -44px; margin-top: -46px; position: absolute; text-align: center; top: 32%; width: 151px; z-index: 1;">
+                          <img style="display: block;width: 100%;border-radius: 100%;-webkit-border-radius: 100%;-moz-border-radius: 100%;" src="${avatar}" alt="">
+                        </span> 
+                      </div>
+                    </div>
+                    <p style="text-align: center;color: #9cad4f; font-size: 14px; margin-top: 15px;"><strong style="font-size: 18px; display: block; font-weight: bold;">70%</strong> Matched</p>
+                  </div>
+                  <div style="text-align: center; display: inline-block; vertical-align: top; padding-left: 0; width: 100%;" class="profile-top-text">
+                    <h5 style="font-size: 18px; font-weight: 600; margin: 0;"><a style="color: #d1832b; text-decoration: none;" href="#">${name}</a></h5>
+                    <p style="margin: 5px 0; font-weight: 600;"><i style="color: #929292; margin-right: 5px; font-size: 16px;" class="fa fa-map-marker"></i>${user.state},${user.country}</p>
+                    <p style="margin: 5px 0; font-weight: 600;"><i style="color: #929292; margin-right: 5px; font-size: 16px;" class="fa fa-mars"></i>${age} ${sexuality}</p>
+                    
+                    <p style="margin: 5px 0; font-weight: 600;">
+                      <a style="color: #558fa0; font-weight: 400; text-decoration: none;" href="javascript:void(0)">Reviews 0</a> 
+                      <strong style="font-weight: 400; color: #929292;">|</strong> 
+                      <a style="color: #558fa0; font-weight: 400; text-decoration: none;" href="javascript:void(0)"><span>${email_verified?"Email Verified":"Email Unverified"}</span></a>
+                    </p>
+                    <p style="margin: 5px 0; font-weight: 600;"><em style="font-weight: 400; color: #929292;">Seeking ${seeking_for}</em></p>
+                    <p style="margin: 5px 0; font-weight: 600;"><a style="color: #558fa0; font-weight: 400; text-decoration: none;" href="javascript:void(0)">${interested_in} </a></p>
+                  </div>
+                  <div style="text-align: center;">
+                  <a style="width:130px; height:35px; border:none; text-align:center; text-decoration: none; line-height: 38px; background: rgba(29,9,12,1); background: -moz-linear-gradient(left, rgba(29,9,12,1) 0%, rgba(133,35,53,1) 100%); background: -webkit-gradient(left top, right top, color-stop(0%, rgba(29,9,12,1)), color-stop(100%, rgba(133,35,53,1))); background: -webkit-linear-gradient(left, rgba(29,9,12,1) 0%, rgba(133,35,53,1) 100%); background: -o-linear-gradient(left, rgba(29,9,12,1) 0%, rgba(133,35,53,1) 100%); background: -ms-linear-gradient(left, rgba(29,9,12,1) 0%, rgba(133,35,53,1) 100%); background: linear-gradient(to right, rgba(29,9,12,1) 0%, rgba(133,35,53,1) 100%); filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1d090c', endColorstr='#852335', GradientType=1 ); border-radius:5px; -webkit-border-radius:5px; -moz-border-radius:5px; -o-border-radius:5px; -khtml-border-radius: 5px; -ms-border-radius:5px; color:#fff; text-transform:capitalize; font-weight:600; font-size:16px; border: 1px solid transparent; cursor: pointer; display: inline-block; margin: 0 auto; margin-top: 15px; outline: none;" class="save-btn usertimeline-send-btn" href="${process.env.FRONT_END_URL}/user-timeline/${user._id}">View Details</a>
+                  </div>
+                </div>
+              </div>                     
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+
+    <tr>
+              
+                                  <td align="left" valign="top" colspan="2" style="padding-top: 10px;">
+              
+                                      <span style="font-size: 12px; line-height: 1.5; color: #333333;">
+                                      
+               If you need help, or you have any other questions, feel free to email info@wrctpl.com, or call customer service toll-free at +91-1234567890.
+                                          <br/><br/>
+              
+                                         
+                                         Kinky - AN online dating service
+              
+                                      </span>
+              
+                                  </td>
+              
+                              </tr>
+    <!-- INTRO : END -->
+
+  </table>
+  <!-- Email Body : END -->
+</div>
+
+</center>
+</body>
+</html> `;
+
+var sendEmail = Mailjet.post('send');
+
+var emailData = {
+'FromEmail': 'info@wrctpl.com',
+'FromName': 'Kinky - An online dating service',
+'Subject': 'New Friend Request',
+'Html-part': email_body,
+'Recipients': [{'Email': to_user_details.email}]
+};
+
+sendEmail.request(emailData);
 
     return res.json({
       success: true,
@@ -2320,32 +2343,365 @@ router.post('/similar_profile', passport.authenticate('jwt', { session : false }
 
   const user_details = await User.findOne({_id:req.body.to_id});
 
-const users = await User.find({gender: user_details.gender,_id:{$ne:user_details._id}});
-
-
+  User.aggregate(
+    [
+        { "$geoNear": {
+            "near": {
+                "type": "Point",
+                "coordinates": user_details.loc.coordinates
+            },
+            "distanceField": "distance",
+            "spherical": true,
+            "query": { gender: user_details.gender, _id: { $ne: user_details._id } }
+        }},
+        { "$sort": { "distance": 1 } }
+    ],
+    function(err,results) {
+      return res.json({
+        success: true,
+        code: 200,
+        info: results
+      }); 
+    }
+)
   
- if(users){
-  return res.json({
-    success: true,
-    code: 200,
-    info: users
-  }); 
-} 
+
 
     
 
 });
 
+router.post('/saveToLikes', passport.authenticate('jwt', { session : false }), async (req, res) => {
+  const flag = req.body.count;
+  const user = await User.findOne({_id: req.body.to_id});
+  if(flag == true){
+  User.findOneAndUpdate(
+    { _id: req.body.to_id }, 
+    { $push: { likes: new mongoose.Types.ObjectId(req.user.id)} },
+   function (error, success) {
+console.log(success);
+
+          
+      return res.json({
+        success: true,
+        code: 200
+      });
+  
+
+   });
+
+  }else{
+    user.likes.splice( user.likes.indexOf(req.user.id), 1 );
+    user.save();
+    return res.json({
+      success: true,
+      code: 200,
+    });
+  }
+
+});
+
+
 router.post('/saveTohotlist', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
  const flag = req.body.flag;
- const user_id = req.body.to_id;
+ const user_id = req.body.hotlist;
  const user = await User.findOne({_id: req.user.id});
+ const to_user_details = await User.findOne({_id: user_id});
+ 
 if(flag == true){
 User.findOneAndUpdate(
    { _id: req.user.id }, 
    { $push: { hotlist: new mongoose.Types.ObjectId(req.body.hotlist)  } },
   function (error, success) {
+    
+   // console.log(to_user_details);
+    let seeking_for = user.looking_for_male ? 'Male,': '';
+    seeking_for += user.looking_for_female ? 'Female,': '';
+    seeking_for += user.looking_for_couple ? 'Couple,': '';
+    seeking_for += user.looking_for_cd ? ' CD/TV/TS,': '';
+
+    seeking_for = seeking_for.substring(0, seeking_for.length - 1);
+    let interested_in = user.interested_in;
+     let avatar = user.avatar !== undefined ? user.avatar: null;
+    let name = user.username;
+    let gender = user.gender !== undefined ? user.gender : 'N/A';
+    let sexuality = user.sexuality !== undefined ? user.sexuality : 'N/A';
+    let sexuality_female = user.sexuality_female !== undefined ? user.sexuality_female : 'N/A';
+    let age = getAge(user.mm +"/"+user.dd +"/"+user.yyyy );
+    let age_female = getAge(user.mm_female +"/"+user.dd_female +"/"+user.yyyy_female );
+    let email_verified;
+     if(user.email_verified) {
+    let email_verified = true;
+  }
+var email_body = `<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8"> <!-- utf-8 works for most cases -->
+<meta name="viewport" content="width=device-width"> <!-- Forcing initial-scale shouldn't be necessary -->
+<meta http-equiv="X-UA-Compatible" content="IE=edge"> <!-- Use the latest (edge) version of IE rendering engine -->
+<meta name="x-apple-disable-message-reformatting">  <!-- Disable auto-scale in iOS 10 Mail entirely -->
+<title>Kynky</title> <!-- The title tag shows in email notifications, like Android 4.4. -->
+
+
+
+<link href="https://fonts.googleapis.com/css?family=Montserrat:300,500" rel="stylesheet">
+<link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+<!--<![endif]-->
+
+
+<!-- CSS Reset -->
+<style>
+
+/* What it does: Remove spaces around the email design added by some email clients. */
+/* Beware: It can remove the padding / margin and add a background color to the compose a reply window. */
+html,
+body {
+  margin: 0 auto !important;
+  padding: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+/* What it does: Stops email clients resizing small text. */
+* {
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* What it does: Centers email on Android 4.4 */
+div[style*="margin: 16px 0"] {
+  margin:0 !important;
+}
+
+/* What it does: Stops Outlook from adding extra spacing to tables. */
+table,
+td {
+  mso-table-lspace: 0pt !important;
+  mso-table-rspace: 0pt !important;
+}
+
+/* What it does: Fixes webkit padding issue. Fix for Yahoo mail table alignment bug. Applies table-layout to the first 2 tables then removes for anything nested deeper. */
+table {
+  border-spacing: 0 !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+  margin: 0 auto !important;
+}
+table table table {
+  table-layout: auto;
+}
+
+/* What it does: Uses a better rendering method when resizing images in IE. */
+img {
+  -ms-interpolation-mode:bicubic;
+}
+
+/* What it does: A work-around for email clients meddling in triggered links. */
+*[x-apple-data-detectors],	/* iOS */
+.x-gmail-data-detectors, 	/* Gmail */
+.x-gmail-data-detectors *,
+.aBn {
+  border-bottom: 0 !important;
+  cursor: default !important;
+  color: inherit !important;
+  text-decoration: none !important;
+  font-size: inherit !important;
+  font-family: inherit !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+}
+
+/* What it does: Prevents Gmail from displaying an download button on large, non-linked images. */
+.a6S {
+  display: none !important;
+  opacity: 0.01 !important;
+}
+/* If the above doesn't work, add a .g-img class to any image in question. */
+img.g-img + div {
+  display:none !important;
+}
+
+/* What it does: Prevents underlining the button text in Windows 10 */
+.button-link {
+  text-decoration: none !important;
+}
+
+.progress-circle.progress-70:after {
+  background-image: linear-gradient(-18deg, #9cad4f 50%, transparent 50%, transparent), linear-gradient(270deg, #9cad4f 50%, #fff 50%, #fff);
+}
+
+.progress-circle:after {
+  content: '';
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  -webkit-border-radius: 50%;
+  -moz-border-radius: 50%;
+  -ms-animation: colorload 2s;
+  -o-animation: colorload 2s;
+  animation: colorload 2s;
+}
+
+.save-btn {
+  border-radius:5px; -webkit-border-radius:5px; -moz-border-radius:5px; -o-border-radius:5px;
+}
+
+/* What it does: Removes right gutter in Gmail iOS app: https://github.com/TedGoas/Cerberus/issues/89  */
+/* Create one of these media queries for each additional viewport size you'd like to fix */
+/* Thanks to Eric Lepetit @ericlepetitsf) for help troubleshooting */
+@media only screen and (min-device-width: 375px) and (max-device-width: 413px) { /* iPhone 6 and 6+ */
+  .email-container {
+    min-width: 375px !important;
+  }
+}
+
+</style>
+
+<!-- Progressive Enhancements -->
+<style>
+
+/* Media Queries */
+@media screen and (max-width: 480px) {
+
+/* What it does: Forces elements to resize to the full width of their container. Useful for resizing images beyond their max-width. */
+.fluid {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* What it does: Forces table cells into full-width rows. */
+.stack-column,
+.stack-column-center {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  direction: ltr !important;
+}
+/* And center justify these ones. */
+.stack-column-center {
+  text-align: center !important;
+}
+
+/* What it does: Generic utility class for centering. Useful for images, buttons, and nested tables. */
+.center-on-narrow {
+  text-align: center !important;
+  display: block !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  float: none !important;
+}
+table.center-on-narrow {
+  display: inline-block !important;
+}
+
+/* What it does: Adjust typography on small screens to improve readability */
+.email-container p {
+  font-size: 17px !important;
+  line-height: 22px !important;
+}
+}
+
+</style>
+
+
+</head>
+<body width="100%" style="margin: 0; mso-line-height-rule: exactly;">
+<center style="width: 100%; text-align: left;">
+
+  <div style="max-width: 980px; margin: auto;" class="email-container">
+
+    <!-- Email Body : BEGIN -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="100%" style="max-width: 980px;" class="email-container">
+
+      <!-- INTRO : BEGIN -->
+      <tr>
+        <td bgcolor="#f4f4f4">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <td style="padding: 0 0px 20px 0px; font-family: sans-serif; font-size: 15px; line-height: 25px; color: #555555; text-align: left; font-weight:normal;">
+                <div style="width: 100%; position: relative; background: #f4f4f4; padding: 15px; border-radius: 6px;" class="profile-left-top-box">
+                  <div class="profile-left-details-box">
+                    <div style="width: 170px; display: block; margin: 0 auto; border-radius: 100%;" class="profile-left-img">
+                      <div style="background: #fff; width: 100px; height: auto; margin: 0 23px; display: inline-block; vertical-align: top; text-align: center; width: 170px; height: auto; background: none; margin: 0;" class="box-circle hidden-xxs">
+                        <div style="width: 170px; height: 170px; background-color: #fff; border-radius: 50%; -webkit-border-radius: 50%; -moz-border-radius: 50%; display: inline-block; position: relative;
+                        " class="progress-circle progress-70">
+                        <span style="background: #fff none repeat scroll 0 0; border-radius: 100%; -webkit-border-radius: 100%; -moz-border-radius: 100%; color: #8b8b8b; display: block; font-size: 1.5rem; left: 32%; line-height: 60px; margin-left: -44px; margin-top: -46px; position: absolute; text-align: center; top: 32%; width: 151px; z-index: 1;">
+                          <img style="display: block;width: 100%;border-radius: 100%;-webkit-border-radius: 100%;-moz-border-radius: 100%;" src="${avatar}" alt="">
+                        </span> 
+                      </div>
+                    </div>
+                    <p style="text-align: center;color: #9cad4f; font-size: 14px; margin-top: 15px;"><strong style="font-size: 18px; display: block; font-weight: bold;">70%</strong> Matched</p>
+                  </div>
+                  <div style="text-align: center; display: inline-block; vertical-align: top; padding-left: 0; width: 100%;" class="profile-top-text">
+                    <h5 style="font-size: 18px; font-weight: 600; margin: 0;"><a style="color: #d1832b; text-decoration: none;" href="#">${name}</a></h5>
+                    <p style="margin: 5px 0; font-weight: 600;"><i style="color: #929292; margin-right: 5px; font-size: 16px;" class="fa fa-map-marker"></i>${user.state},${user.country}</p>
+                    <p style="margin: 5px 0; font-weight: 600;"><i style="color: #929292; margin-right: 5px; font-size: 16px;" class="fa fa-mars"></i>${age} ${sexuality}</p>
+                    
+                    <p style="margin: 5px 0; font-weight: 600;">
+                      <a style="color: #558fa0; font-weight: 400; text-decoration: none;" href="javascript:void(0)">Reviews 0</a> 
+                      <strong style="font-weight: 400; color: #929292;">|</strong> 
+                      <a style="color: #558fa0; font-weight: 400; text-decoration: none;" href="javascript:void(0)"><span>${email_verified?"Email Verified":"Email Unverified"}</span></a>
+                    </p>
+                    <p style="margin: 5px 0; font-weight: 600;"><em style="font-weight: 400; color: #929292;">Seeking ${seeking_for}</em></p>
+                    <p style="margin: 5px 0; font-weight: 600;"><a style="color: #558fa0; font-weight: 400; text-decoration: none;" href="javascript:void(0)">${interested_in} </a></p>
+                  </div>
+                  <div style="text-align: center;">
+                  <a style="width:130px; height:35px; border:none; text-align:center; text-decoration: none; line-height: 38px; background: rgba(29,9,12,1); background: -moz-linear-gradient(left, rgba(29,9,12,1) 0%, rgba(133,35,53,1) 100%); background: -webkit-gradient(left top, right top, color-stop(0%, rgba(29,9,12,1)), color-stop(100%, rgba(133,35,53,1))); background: -webkit-linear-gradient(left, rgba(29,9,12,1) 0%, rgba(133,35,53,1) 100%); background: -o-linear-gradient(left, rgba(29,9,12,1) 0%, rgba(133,35,53,1) 100%); background: -ms-linear-gradient(left, rgba(29,9,12,1) 0%, rgba(133,35,53,1) 100%); background: linear-gradient(to right, rgba(29,9,12,1) 0%, rgba(133,35,53,1) 100%); filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1d090c', endColorstr='#852335', GradientType=1 ); border-radius:5px; -webkit-border-radius:5px; -moz-border-radius:5px; -o-border-radius:5px; -khtml-border-radius: 5px; -ms-border-radius:5px; color:#fff; text-transform:capitalize; font-weight:600; font-size:16px; border: 1px solid transparent; cursor: pointer; display: inline-block; margin: 0 auto; margin-top: 15px; outline: none;" class="save-btn usertimeline-send-btn" href="${process.env.FRONT_END_URL}/user-timeline/${user._id}">View Details</a>
+                  </div>
+                </div>
+              </div>                     
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+
+    <tr>
+              
+                                  <td align="left" valign="top" colspan="2" style="padding-top: 10px;">
+              
+                                      <span style="font-size: 12px; line-height: 1.5; color: #333333;">
+                                      
+               If you need help, or you have any other questions, feel free to email info@wrctpl.com, or call customer service toll-free at +91-1234567890.
+                                          <br/><br/>
+              
+                                         
+                                         Kinky - AN online dating service
+              
+                                      </span>
+              
+                                  </td>
+              
+                              </tr>
+    <!-- INTRO : END -->
+
+  </table>
+  <!-- Email Body : END -->
+</div>
+
+</center>
+</body>
+</html> `;
+
+var sendEmail = Mailjet.post('send');
+
+var emailData = {
+'FromEmail': 'info@wrctpl.com',
+'FromName': 'Kinky - An online dating service',
+'Subject': 'Someone feel you hot!',
+'Html-part': email_body,
+'Recipients': [{'Email': to_user_details.email}]
+};
+
+sendEmail.request(emailData);
+
     User.findById(req.user.id).then(user => {
           
       return res.json({
@@ -2474,6 +2830,22 @@ router.post('/hot_list_by_user', passport.authenticate('jwt', { session : false 
     });
   } 
      
+
+});
+router.post('/match_perscent', passport.authenticate('jwt', { session : false }), async (req, res) => {
+  const user =  await User.findById(req.body.id);
+  const count =  await User.find();
+  const total_user = count.length;
+  const users = await User.find( { $and: [ { smoke: user.smoke },{_id: { $ne: user._id }}, { drugs:user.drugs } , {drink:user.drink}]});
+   
+    const percent = (users.length/total_user)*100;
+
+  return res.json({
+    success: true,
+    code: 200,
+    info: percent
+  });
+
 
 });
 router.post('/friend_list_by_user', passport.authenticate('jwt', { session : false }), async (req, res) => {
@@ -2637,6 +3009,7 @@ router.post("/check-loggedin", passport.authenticate('jwt', { session : false })
     });
   }
   else {
+
     pusher.trigger("events-channel", "check-logged-in", {
       status: 0,
       user_id: req.body.user_id
