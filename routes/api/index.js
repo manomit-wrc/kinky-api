@@ -1432,29 +1432,497 @@ const arr = ['Shaved', 'Smooth', 'Trimmed', 'Natural', 'Wild', 'I will tell you 
 });  */
 
   router.get('/test-upload', async(req, res) =>{
+    var email_body = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+      <!-- disable auto telephone linking in iOS -->
+      <meta name="format-detection" content="telephone=no">
+      <title>Goomo - Recipient Email</title>
+      <style type="text/css">
+      @font-face {
+        font-family: 'ProximaNovaRegular';
+        src: url('fonts/ProximaNovaRegular.eot');
+        src: url('fonts/ProximaNovaRegular.eot') format('embedded-opentype'),
+        url('fonts/ProximaNovaRegular.woff2') format('woff2'),
+        url('fonts/ProximaNovaRegular.woff') format('woff'),
+        url('fonts/ProximaNovaRegular.ttf') format('truetype'),
+        url('fonts/ProximaNovaRegular.svg#ProximaNovaRegular') format('svg');}
+        @font-face {
+          font-family: 'ProximaNova-Semibold';
+          src: url('fonts/ProximaNova-Semibold.eot');
+          src: url('fonts/ProximaNova-Semibold.woff2') format('woff2'),
+          url('fonts/ProximaNova-Semibold.woff') format('woff'),
+          url('fonts/ProximaNova-Semibold.ttf') format('truetype'),
+          url('fonts/ProximaNova-Semibold.svg#ProximaNova-Semibold') format('svg'),
+          url('fonts/ProximaNova-Semibold.eot?#iefix') format('embedded-opentype');}
+    
+          @media only screen and (max-width: 600px) {
+            .main-card {
+              width: 90%  !important;
+              display: table !important;
+              margin: 0 auto !important;
+            }
+    
+            .column {
+              width: auto !important;
+              display: block !important;
+            }
+    
+            .card-box {
+              padding: 20px !important;
+            }
+    
+            .main-footer {
+              width: 90% !important;
+              display: table !important;
+              margin: 20px auto !important;
+            }
+    
+            .main-footer td {
+              display: table !important;
+              margin: 0 auto !important;
+            }
+    
+            .card-box-header td {
+              display: table  !important;
+              text-align: center  !important;
+              margin: 10px auto  !important;
+            }
+    
+            .bg-dashed span {
+              display: block !important;
+              float: none !important;
+              text-align: center !important;
+            }
+    
+            .bg-dashed span + span {
+              float: none !important;
+              margin-top: 5px !important;
+            }
+    
+            .btn-common {
+              padding: 15px 20px !important;
+              height: auto !important;
+              line-height: 1 !important;
+              display: block !important;
+            }
+    
+            .line-break {
+              display: none !important;
+            }
+          }
+    
+    
+          @media only screen and (-webkit-device-pixel-ratio:.75){
+            /* Put CSS for low density (ldpi) Android layouts in here */
+            .main-card {
+              width: 90%  !important;
+              display: table !important;
+              margin: 0 auto !important;
+            }
+    
+            .column {
+              width: auto !important;
+              display: block !important;
+            }
+    
+            .card-box {
+              padding: 20px !important;
+            }
+    
+            .main-footer {
+              width: 90% !important;
+              display: table !important;
+              margin: 20px auto !important;
+            }
+    
+            .main-footer td {
+              display: table !important;
+              margin: 0 auto !important;
+            }
+    
+            .card-box-header td {
+              display: table  !important;
+              text-align: center  !important;
+              margin: 10px auto  !important;
+            }
+    
+            .bg-dashed span {
+              display: block !important;
+              float: none !important;
+              text-align: center !important;
+            }
+    
+            .bg-dashed span + span {
+              float: none !important;
+              margin-top: 5px !important;
+            }
+    
+            .btn-common {
+              padding: 15px 20px !important;
+              height: auto !important;
+              line-height: 1 !important;
+              display: block !important;
+            }
+    
+            .line-break {
+              display: none !important;
+            }
+          }
+    
+          @media only screen and (-webkit-device-pixel-ratio:1){
+            /* Put CSS for medium density (mdpi) Android layouts in here */
+            .main-card {
+              width: 90%  !important;
+              display: table !important;
+              margin: 0 auto !important;
+            }
+    
+            .column {
+              width: auto !important;
+              display: block !important;
+            }
+    
+            .card-box {
+              padding: 20px !important;
+            }
+    
+            .main-footer {
+              width: 90% !important;
+              display: table !important;
+              margin: 20px auto !important;
+            }
+    
+            .main-footer td {
+              display: table !important;
+              margin: 0 auto !important;
+            }
+    
+            .card-box-header td {
+              display: table  !important;
+              text-align: center  !important;
+              margin: 10px auto  !important;
+            }
+    
+            .bg-dashed span {
+              display: block !important;
+              float: none !important;
+              text-align: center !important;
+            }
+    
+            .bg-dashed span + span {
+              float: none !important;
+              margin-top: 5px !important;
+            }
+    
+            .btn-common {
+              padding: 15px 20px !important;
+              height: auto !important;
+              line-height: 1 !important;
+              display: block !important;
+            }
+    
+            .line-break {
+              display: none !important;
+            }
+          }
+    
+          @media only screen and (-webkit-device-pixel-ratio:1.5){
+            /* Put CSS for high density (hdpi) Android layouts in here */
+            .main-card {
+              width: 90%  !important;
+              display: table !important;
+              margin: 0 auto !important;
+            }
+    
+            .column {
+              width: auto !important;
+              display: block !important;
+            }
+    
+            .card-box {
+              padding: 20px !important;
+            }
+    
+            .main-footer {
+              width: 90% !important;
+              display: table !important;
+              margin: 20px auto !important;
+            }
+    
+            .main-footer td {
+              display: table !important;
+              margin: 0 auto !important;
+            }
+    
+            .card-box-header td {
+              display: table  !important;
+              text-align: center  !important;
+              margin: 10px auto  !important;
+            }
+    
+            .bg-dashed span {
+              display: block !important;
+              float: none !important;
+              text-align: center !important;
+            }
+    
+            .bg-dashed span + span {
+              float: none !important;
+              margin-top: 5px !important;
+            }
+    
+            .btn-common {
+              padding: 15px 20px !important;
+              height: auto !important;
+              line-height: 1 !important;
+              display: block !important;
+            }
+    
+            .line-break {
+              display: none !important;
+            }
+          }
+          /* end Android targeting */
+    
+          /* CONDITIONS FOR IOS DEVICES ONLY
+          =====================================================*/
+          @media only screen and (min-device-width : 320px) and (max-device-width:600px) {
+            .main-card {
+              width: 90%  !important;
+              display: table !important;
+              margin: 0 auto !important;
+            }
+    
+            .column {
+              width: auto !important;
+              display: block !important;
+            }
+    
+            .card-box {
+              padding: 20px !important;
+            }
+    
+            .main-footer {
+              width: 90% !important;
+              display: table !important;
+              margin: 20px auto !important;
+            }
+    
+            .main-footer td {
+              display: table !important;
+              margin: 0 auto !important;
+            }
+    
+            .card-box-header td {
+              display: table  !important;
+              text-align: center  !important;
+              margin: 10px auto  !important;
+            }
+    
+            .bg-dashed span {
+              display: block !important;
+              float: none !important;
+              text-align: center !important;
+            }
+    
+            .bg-dashed span + span {
+              float: none !important;
+              margin-top: 5px !important;
+            }
+    
+            .btn-common {
+              padding: 15px 20px !important;
+              height: auto !important;
+              line-height: 1 !important;
+              display: block !important;
+            }
+    
+            .line-break {
+              display: none !important;
+            }
+    
+          }
+          /* end IOS targeting */
+    
+    
+    
+        </style>
+      </head>
+      <body style="height: 100%; margin: 0; padding: 0; width: 100%; background: #e5f0f2; color: #222; font-family: 'ProximaNovaRegular'; font-size: 14px;">
+        <div class="main-email">
+          <table class="main-card" border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" style="width: 100%; background: #ffffff; margin: 20px auto; -webkit-border-radius: 10px; -moz-border-radius: 10px; -ms-border-radius: 10px; -o-border-radius: 10px; border-radius: 10px; -webkit-box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.35); -ms-box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.35); -o-box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.35); box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.35); max-width: 600px;">
+            <tr>
+              <td class="main-header" style="padding: 20px; border-bottom: 1px solid #e2e2e2;">
+                <table style="width: 100%;" width="100%">
+                  <tr>
+                    <td align="left">
+                      <img class="img-fluid" src="http://wrctpl.com/goomo/email-template/logo.png" alt="" style="border: 0; outline: none; text-decoration: none; line-height: 100%; max-width: 100%; display: block; height: auto;">
+                    </td>
+                    <td align="right">
+                      <a href="#" style="color: #0066cc; text-decoration: none;">View in browser</a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td class="main-content" style="padding: 20px;">
+                <table style="width: 100%;" width="100%">
+                  <tr>
+                    <td>
+                      <p class="color-0 font-16" style="font-weight: normal; font-family: 'ProximaNovaRegular'; line-height: 1; letter-spacing: normal; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; padding-right: 0; color: #000; font-size: 16px;">
+                        Hello Sunita,
+                      </p>
+                      <p class="color-0 m-tb-20 font-16 line-height-18" style="font-weight: normal; font-family: 'ProximaNovaRegular'; letter-spacing: normal; margin-right: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; padding-right: 0; margin-top: 20px; margin-bottom: 20px; color: #000; font-size: 16px; line-height: 18px;">
+                        You have received a GOOMO Gift Card worth <img src="http://wrctpl.com/goomo/email-template/rupee-icon.png" width="8" height="12" style="border: 0; outline: none; text-decoration: none; height: auto; line-height: 100%;">   25000 from "Nisha & Friends" 
+                        for your wedding anniversary. You can redeem this gift voucher by providing the 
+                        voucher code and PIN.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+                <table class="card-box border-radius-10" style="width: 100%; -webkit-border-radius: 10px; -moz-border-radius: 10px; -ms-border-radius: 10px; -o-border-radius: 10px; border-radius: 10px; border: 1px dashed #ccc; padding: 0; overflow: hidden;" width="100%">
+                  <tr>
+                    <td class="column" valign="top" bgcolor="#bbf9e7" style="width: 300px; padding: 10px; text-align: center;" width="300" align="center">
+                      <table style="width: 100%;" width="100%">
+                        <tr>
+                          <td>
+                            <img class="img-fluid" src="http://wrctpl.com/goomo/email-template/gift-card.png" alt="" style="border: 0; outline: none; text-decoration: none; line-height: 100%; max-width: 100%; display: block; height: auto;">
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>
+                            <h4 class="font-semibold font-20 m-t-20" style="color: #222222; font-weight: normal; line-height: 1; letter-spacing: normal; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; padding-right: 0; margin-top: 20px; font-size: 20px; font-family: 'ProximaNova-Semibold'; font-family: 'ProximaNova-Semibold';">
+                              Happy Anniversary Megha
+                            </h4>
+                            <p class="color-3 font-italic m-tb-20" style="font-weight: normal; font-family: 'ProximaNovaRegular'; font-size: 14px; line-height: 1; letter-spacing: normal; margin-right: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; padding-right: 0; margin-top: 20px; margin-bottom: 20px; color: #666; font-style: italic;">
+                              Best wishes to you and your
+                              husband on your anniversary.
+                              This is a small gift from all of us to
+                              celebrate this happy moment.
+                            </p>
+                            <a href="" class="font-semibold font-16" style="color: #0066cc; font-size: 16px; font-family: 'ProximaNova-Semibold'; font-family: 'ProximaNova-Semibold'; text-decoration: none;">
+                              20 Messages
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <td class="column" valign="top" bgcolor="#ffffff" style="width: 300px; padding: 10px; text-align: center;" width="300" align="center">
+                      <table class="card-box-header" style="width: 100%;" width="100%">
+                        <tr>
+                          <td align="left">
+                            <img class="img-fluid" src="http://wrctpl.com/goomo/email-template/logo-sm.png" alt="" style="border: 0; outline: none; text-decoration: none; line-height: 100%; max-width: 100%; display: block; height: auto;">
+                          </td>
+                          <td align="right">
+                            <a href="#" class="font-14 text-right" style="color: #0066cc; text-align: right; font-size: 14px; text-decoration: none;">www.goomo.com</a>
+                          </td>
+                        </tr>
+                        <tr class="line-break">
+                          <td colspan="2">
+                            <br>
+                            <br>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td colspan="2">
+                            <p class="color-3 font-16 m-b-10" style="font-weight: normal; font-family: 'ProximaNovaRegular'; line-height: 1; letter-spacing: normal; margin-top: 0; margin-right: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; padding-right: 0; margin-bottom: 10px; color: #666; font-size: 16px;">
+                              Gift Card Value
+                            </p>
+                            <h4 class="font-30 font-semibold m-b-10" style="color: #222222; font-weight: normal; line-height: 1; letter-spacing: normal; margin-top: 0; margin-right: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; padding-right: 0; margin-bottom: 10px; font-size: 30px; font-family: 'ProximaNova-Semibold'; font-family: 'ProximaNova-Semibold';">
+                              Rs. 25,000
+                            </h4>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="bg-dashed m-tb-25 border-radius-5" colspan="2" style="-webkit-border-radius: 5px; -moz-border-radius: 5px; -ms-border-radius: 5px; -o-border-radius: 5px; border-radius: 5px; margin-top: 25px; margin-bottom: 25px; background: #f2f2f2; border: 1px dashed #cacaca; padding: 10px; overflow: hidden; clear: both;">
+                            <span style="float: left;">
+                              Code: GOOM1234
+                            </span>
+                            <span style="float: right;">
+                              Pin: 1234
+                            </span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td colspan="2">
+                            <small class="font-12 color-2 m-t-10 d-block" style="margin-top: 10px; color: #444; display: block;">
+                              Valid till 19/09/19
+                            </small>
+                          </td>
+                        </tr>
+                        <tr class="line-break">
+                          <td colspan="2">
+                            <br>
+                            <br>
+                          </td>
+                        </tr>
+    
+                        <tr>
+                          <td colspan="2">
+                            <a href="" class="btn-common font-14 font-semibold d-block border-radius-5" style="-webkit-border-radius: 5px; -moz-border-radius: 5px; -ms-border-radius: 5px; -o-border-radius: 5px; border-radius: 5px; font-size: 14px; font-family: 'ProximaNova-Semibold'; font-family: 'ProximaNova-Semibold'; display: block; color: #fff; background-color: #005670; border-color: #ffa300; padding: 0 40px; height: 35px; line-height: 35px; text-transform: uppercase; text-decoration: none;">
+                              Visit Goomo.com
+                            </a>
+                          </td>
+                        </tr>
+                        <tr class="line-break">
+                          <td colspan="2">
+                            <br>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td colspan="2">
+                            <a href="" class="font-16" style="color: #0066cc; font-size: 16px; text-decoration: none;">FAQs</a>    
+                            <a href="javascript:void(0);" class="font-16" style="color: #0066cc; font-size: 16px; text-decoration: none;">|</a>    
+                            <a href="" class="font-16" style="color: #0066cc; font-size: 16px; text-decoration: none;">Check Balance</a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+          <table class="main-footer" style="width: 100%; max-width: 600px; display: table; margin: 0 auto;" width="100%">
+            <tr>
+              <td align="left">
+                <p style="color: #222222; font-weight: normal; font-family: 'ProximaNovaRegular'; font-size: 14px; line-height: 1; letter-spacing: normal; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; padding-right: 0;">If you have any questions
+                  <a href="" style="color: #0066cc; text-decoration: none;">
+                    <u>
+                      Contact Us
+                    </u>
+                  </a>
+                </p>
+              </td>
+              <td align="right">
+                <p style="color: #222222; font-weight: normal; font-family: 'ProximaNovaRegular'; font-size: 14px; line-height: 1; letter-spacing: normal; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; padding-right: 0;">
+                  Powered by
+                  <img src="http://wrctpl.com/goomo/email-template/lifafa-logo.png" style="border: 0; outline: none; text-decoration: none; height: auto; line-height: 100%; vertical-align: middle;" alt="">
+                </p>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </body>
+      </html>  
+   `;
 
-  const user = await User.findOne({_id: '5b98f7eb54f5af2a38cc3bf0'});
+var sendEmail = Mailjet.post('send');
 
-  User.aggregate(
-    [
-        { "$geoNear": {
-            "near": {
-                "type": "Point",
-                "coordinates": user.loc.coordinates
-            },
-            "distanceField": "distance",
-            "spherical": true,
-            "query": { gender: user.gender, _id: { $ne: user._id } }
-        }},
-        { "$sort": { "distance": 1 } }
-    ],
-    function(err,results) {
-console.log('====================================');
+var emailData = {
+'FromEmail': 'info@wrctpl.com',
+'FromName': 'Kinky - An online dating service',
+'Subject': 'Email verification',
+'Html-part': email_body,
+'Recipients': [{'Email': 'somenath@wrctpl.com'}]
+};
 
-console.log(results);
-console.log('====================================');
-    }
-)
+sendEmail.request(emailData);
 
   });
 
@@ -1858,7 +2326,7 @@ router.post('/submit-quick-search', passport.authenticate('jwt', { session : fal
   
   var match =  { $match: { 
     $and: [ 
-        { distance: parseInt(req.body.distance), country: req.body.country, state: req.body.state, user: { $ne: new mongoose.Types.ObjectId(req.user.id ) } },  
+        { distance: {$lte: parseInt(req.body.distance)}, country: req.body.country, state: req.body.state, user: { $ne: new mongoose.Types.ObjectId(req.user.id ) } },  
         {
             $or:[{looking_for_male: req.body.looking_for_male},
                  {looking_for_female: req.body.looking_for_female},
@@ -1926,7 +2394,7 @@ router.post('/submit-advance-search', passport.authenticate('jwt', { session : f
 
   var match =  { $match: { 
     $and: [ 
-        { distance: parseInt(req.body.distance), country: req.body.country, state: req.body.state,from_age:req.body.from_age,to_age:req.body.to_age,user: { $ne: new mongoose.Types.ObjectId(req.user.id ) } },  
+        {distance: {$lte: parseInt(req.body.distance)}, country: req.body.country, state: req.body.state,from_age:req.body.from_age,to_age:req.body.to_age,user: { $ne: new mongoose.Types.ObjectId(req.user.id ) } },  
          {
             $or:[{looking_for_male: req.body.looking_for_male},
                  {looking_for_female: req.body.looking_for_female},
@@ -1989,7 +2457,8 @@ router.post('/request_send', passport.authenticate('jwt', { session : false }), 
   const sendRequest = new Friendrequest({
     from_user : from_id,
     to_user : to_id,
-    requested_add : new Date()
+    requested_add : new Date(),
+    requested_id:from_id
   });
   if (sendRequest.save()){
     let seeking_for = user.looking_for_male ? 'Male,': '';
@@ -2887,13 +3356,20 @@ router.post('/cancel_invetation', passport.authenticate('jwt', { session : false
 });
 router.post('/friend_remove', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
-  const to_id = req.body.to_id;
+   const to_id = req.body.to_id;
   const from_id = req.user.id;
+const requested_id = req.body.requested_id;
+console.log(requested_id);
+let user;
+if(from_id === requested_id){
+   user = await Friendrequest.findOne({from_user:from_id,to_user:to_id});
+}else{
 
-  const user = await Friendrequest.findOne({ $or:[ {'from_user':from_id}, {'to_user':to_id},{'from_user':to_id},{'to_user':from_id} ] });
+   user = await Friendrequest.findOne({from_user:to_id,to_user:from_id});
+} 
 
   
-    if(user.remove()){
+  if(user.remove()){
   const users = await Friendrequest.find({to_user: to_id}).populate('from_user');
     return res.json({
       success: true,
@@ -2901,7 +3377,7 @@ router.post('/friend_remove', passport.authenticate('jwt', { session : false }),
       info: users, 
       msg: 'Friend removed from list'
     });
-  }   
+  }    
     
 
 });
