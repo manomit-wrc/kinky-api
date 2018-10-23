@@ -17,6 +17,7 @@ const userSchema = new Schema({
     password: { type: String },
     avatar: { type: String },
     gender: { type: String },
+    age: {type:Number},
     looking_for:  [{ type: String }],
     looking_for_male: {type:Boolean},
     looking_for_female: {type:Boolean},
