@@ -3287,11 +3287,12 @@ router.post('/friends_request_count', passport.authenticate('jwt', { session: fa
 
 router.post('/post_description', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
-
+  const user = await Settings.find({user:req.user.id});
 
  const post = new Post({
     user: req.user.id,
     add_time: new Date(),
+    user_distance:user[0].distance,
     description: req.body.post_description,
     content:req.body.url !=null ?req.body.url:'',
     content_type:req.body.type !=''?req.body.type:''
@@ -3300,27 +3301,28 @@ router.post('/post_description', passport.authenticate('jwt', { session : false 
  
 
     if(post.save()){
-     Post.find().then(postData =>{
-return res.json({
-  success: true,
-  code: 200
-});
-     });
+      Post.find().then(postData =>{
+    return res.json({
+      success: true,
+      code: 200
+    }); 
+  }); 
     
-   } 
+   }
 
 });
 router.post('/post_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
+  const user = await Settings.find({user:req.user.id});
 
-const post = await Post.find().populate('user');
+const post = await Post.find({user_distance: {$lte: parseInt(user[0].distance)}}).populate('user');
 
-   if(post){
+  if(post){
     return res.json({
       success: true,
       info: post,
       code: 200
     });
-   }
+   } 
 
 });
 

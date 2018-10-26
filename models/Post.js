@@ -6,6 +6,7 @@ const PostSchema = new Schema({
     user: { type: Schema.Types.ObjectId , ref: 'User'},
     add_time:{ type: Date },
     description:{type:String},
+    user_distance:{type:String},
     like:[{
         like_by:{type: Schema.Types.ObjectId , ref: 'User'}
     }],
