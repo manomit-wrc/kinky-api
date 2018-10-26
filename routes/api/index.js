@@ -2613,7 +2613,7 @@ router.post('/saveToLikes', passport.authenticate('jwt', { session : false }), a
     const sendNoti = new Notification({
       from_user : req.user.id,
       to_user : req.body.to_id,
-      requested_add : new Date(),
+      noti_date : new Date(),
       noti_desc:'has liked you'
     });
   
@@ -2637,7 +2637,7 @@ console.log(success);
     const sendNoti = new Notification({
       from_user : req.user.id,
       to_user : req.body.to_id,
-      requested_add : new Date(),
+      noti_date : new Date(),
       noti_desc:'has unliked you'
     });
   
@@ -2664,7 +2664,7 @@ if(flag == true){
   const sendNoti = new Notification({
     from_user : req.user.id,
     to_user : req.body.hotlist,
-    requested_add : new Date(),
+    noti_date : new Date(),
     noti_desc:'has added you as a hotlist'
   });
 
@@ -2976,7 +2976,7 @@ sendEmail.request(emailData);
   const sendNoti = new Notification({
     from_user : req.user.id,
     to_user : req.body.hotlist,
-    requested_add : new Date(),
+    noti_date : new Date(),
     noti_desc:'has removed you as a hotlist'
   });
 
@@ -3287,24 +3287,32 @@ router.post('/friends_request_count', passport.authenticate('jwt', { session: fa
 
 router.post('/post_description', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
-   const post = new Post({
-     user: req.user.id,
-     add_time: new Date(),
-     description: req.body.post_description
-   });
 
-   if(post.save()){
-    return res.json({
-      success: true,
-      info: post,
-      code: 200
-    });
-   }
+
+ const post = new Post({
+    user: req.user.id,
+    add_time: new Date(),
+    description: req.body.post_description,
+    content:req.body.url !=null ?req.body.url:'',
+    content_type:req.body.type !=''?req.body.type:''
+  });
+
+ 
+
+    if(post.save()){
+     Post.find().then(postData =>{
+return res.json({
+  success: true,
+  code: 200
+});
+     });
+    
+   } 
 
 });
 router.post('/post_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
-const post = await Post.find({user:req.user.id}).populate('user');
+const post = await Post.find().populate('user');
 
    if(post){
     return res.json({
