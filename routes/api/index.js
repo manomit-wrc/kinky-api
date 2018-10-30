@@ -2651,6 +2651,33 @@ console.log(success);
   }
 
 });
+router.post('/postLike', passport.authenticate('jwt', { session : false }), async (req, res) => {
+  const flag = req.body.count;
+  const post = await Post.findOne({_id: req.body.post_id});
+  if(flag == true){
+    post.like =  new mongoose.Types.ObjectId(req.body.to_id);
+  
+    post.save();
+   
+      return res.json({
+        success: true,
+        code: 200
+      
+  
+
+   });
+
+  }else{
+
+    post.like.splice( post.like.indexOf(req.body.to_id), 1 );
+    post.save();
+    return res.json({
+      success: true,
+      code: 200,
+    });
+  }
+
+});
 
 
 router.post('/saveTohotlist', passport.authenticate('jwt', { session : false }), async (req, res) => {

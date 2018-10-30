@@ -7,9 +7,7 @@ const PostSchema = new Schema({
     add_time:{ type: Date },
     description:{type:String},
     user_distance:{type:String},
-    like:[{
-        like_by:{type: Schema.Types.ObjectId , ref: 'User'}
-    }],
+    like:[{type: Schema.Types.ObjectId , ref: 'User'}],
     comments:[
         {
             comments_by:{type: Schema.Types.ObjectId , ref: 'User'},
