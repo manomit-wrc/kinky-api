@@ -3311,10 +3311,44 @@ router.post('/post_description', passport.authenticate('jwt', { session : false 
    }
 
 });
+router.post('/post_comment', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+  var push_obj = [];
+  push_obj.push({
+    comments_by:new mongoose.Types.ObjectId(req.user.id),
+    comment_text:req.body.comment,
+    add_time:new Date()
+  })
+
+  Post.findOneAndUpdate(
+    { _id: req.body.id }, 
+    { $push: { comments: push_obj} },
+   function (error, success) {
+
+    return res.json({
+      success: true,
+      code: 200
+    }); 
+});
+
+});
 router.post('/post_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
   const user = await Settings.find({user:req.user.id});
 
 const post = await Post.find({user_distance: {$lte: parseInt(user[0].distance)}}).populate('user');
+
+  if(post){
+    return res.json({
+      success: true,
+      info: post,
+      code: 200
+    });
+   } 
+
+});
+router.post('/post_list_by_user', passport.authenticate('jwt', { session : false }), async (req, res) => {
+  
+const post = await Post.find({user:req.body.id}).populate('user');
 
   if(post){
     return res.json({

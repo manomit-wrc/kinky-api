@@ -10,10 +10,13 @@ const PostSchema = new Schema({
     like:[{
         like_by:{type: Schema.Types.ObjectId , ref: 'User'}
     }],
-    comments:[{
-        comments_by:{type: Schema.Types.ObjectId , ref: 'User'},
-        comment_text:{type:String}
-    }],
+    comments:[
+        {
+            comments_by:{type: Schema.Types.ObjectId , ref: 'User'},
+            comment_text:{type:String},
+            add_time:{ type: Date },
+         }
+],
     content:{type:String},
     content_type:{type:String}
 });
