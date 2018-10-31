@@ -3319,7 +3319,7 @@ router.post('/post_description', passport.authenticate('jwt', { session : false 
  const post = new Post({
     user: req.user.id,
     add_time: new Date(),
-    user_distance:user[0].distance,
+    user_distance:parseInt(user[0].distance),
     description: req.body.post_description,
     content:req.body.url !=null ?req.body.url:'',
     content_type:req.body.type !=''?req.body.type:''
@@ -3360,6 +3360,7 @@ router.post('/post_comment', passport.authenticate('jwt', { session : false }), 
 
 });
 router.post('/post_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
   const user = await Settings.find({user:req.user.id});
 const post = await Post.find({user_distance: {$lte: parseInt(user[0].distance)}}).populate('user').populate('comments.comments_by');
   if(post){
@@ -3373,7 +3374,7 @@ const post = await Post.find({user_distance: {$lte: parseInt(user[0].distance)}}
 });
 router.post('/post_list_by_user', passport.authenticate('jwt', { session : false }), async (req, res) => {
   
-const post = await Post.find({user:req.body.id}).populate('user');
+const post = await Post.find({user:req.body.id}).populate('user').populate('comments.comments_by');
 
   if(post){
     return res.json({
