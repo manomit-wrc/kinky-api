@@ -3361,9 +3361,7 @@ router.post('/post_comment', passport.authenticate('jwt', { session : false }), 
 });
 router.post('/post_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
   const user = await Settings.find({user:req.user.id});
-
-const post = await Post.find({user_distance: {$lte: parseInt(user[0].distance)}}).populate('user');
-
+const post = await Post.find({user_distance: {$lte: parseInt(user[0].distance)}}).populate('user').populate('comments.comments_by');
   if(post){
     return res.json({
       success: true,
