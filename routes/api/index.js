@@ -31,6 +31,7 @@ const mongoose = require('mongoose');
 
 const CountryList = require('../../config/countries.json');
 const Post = require('../../models/Post');
+const Message = require('../../models/Message');
 
 //for sending email
 const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb8', 'fde7e8364b2ba00150f43eae0851cc85');
@@ -2603,6 +2604,53 @@ router.post('/similar_profile', passport.authenticate('jwt', { session : false }
 
 
     
+
+});
+
+router.post('/submit_message', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+  const sendMessage = new Message({
+    from_user : req.user.id,
+    to_user : req.body.id,
+    requested_add : new Date(),
+    requested_id:req.user.id,
+    message_text: req.body.message
+  });
+
+  if(sendMessage.save()){
+    Message.find().then(messageData =>{
+  return res.json({
+    success: true,
+    code: 200
+  }); 
+}); 
+  
+ }
+  
+
+});
+router.post('/message_list_by_user', passport.authenticate('jwt', { session : false }), async (req, res) => {
+ let to_id = req.body.id;
+/* const messagList = await Message.find( { read_status: 0 }).and([
+  { $or: [{to_user: req.user.id}, {from_user: req.user.id},{to_user: req.body.id},{from_user: req.body.id}] }
+]).populate('from_user').populate('to_user'); */
+
+const messagList = await Message.find({
+  $and: [
+      { $or: [{to_user: req.user.id}, {from_user: req.body.id}] },
+      { $or: [{from_user: req.user.id}, {to_user: req.body.id}] }
+  ]
+}).populate('from_user').populate('to_user');
+
+
+if(messagList){
+  return res.json({
+    success: true,
+    info:messagList,
+    code: 200
+  });
+}
+  
 
 });
 
