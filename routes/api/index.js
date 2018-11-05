@@ -2630,15 +2630,17 @@ router.post('/submit_message', passport.authenticate('jwt', { session : false })
 
 });
 router.post('/message_list_by_user', passport.authenticate('jwt', { session : false }), async (req, res) => {
- let to_id = req.body.id;
+
 /* const messagList = await Message.find( { read_status: 0 }).and([
   { $or: [{to_user: req.user.id}, {from_user: req.user.id},{to_user: req.body.id},{from_user: req.body.id}] }
 ]).populate('from_user').populate('to_user'); */
 
+
+
 const messagList = await Message.find({
-  $and: [
-      { $or: [{to_user: req.user.id}, {from_user: req.body.id}] },
-      { $or: [{from_user: req.user.id}, {to_user: req.body.id}] }
+  $or: [
+      { $and: [{to_user: req.user.id}, {from_user: req.body.id}] },
+      { $and: [{from_user: req.user.id}, {to_user: req.body.id}] }
   ]
 }).populate('from_user').populate('to_user');
 
