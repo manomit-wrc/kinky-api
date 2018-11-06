@@ -2631,12 +2631,6 @@ router.post('/submit_message', passport.authenticate('jwt', { session : false })
 });
 router.post('/message_list_by_user', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
-/* const messagList = await Message.find( { read_status: 0 }).and([
-  { $or: [{to_user: req.user.id}, {from_user: req.user.id},{to_user: req.body.id},{from_user: req.body.id}] }
-]).populate('from_user').populate('to_user'); */
-
-
-
 const messagList = await Message.find({
   $or: [
       { $and: [{to_user: req.user.id}, {from_user: req.body.id}] },
@@ -2653,6 +2647,38 @@ if(messagList){
   });
 }
   
+
+});
+router.post('/message_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+  const messagList = await Message.aggregate([
+    {
+        $match: {to_user:req.user.id}
+    },
+    {
+        $sort: {
+          requested_add: 1
+        }
+    },
+    { 
+        $group: { 
+            _id: '$to_user',
+            lastId: { $last: '$_id' },
+            message_text: { $last: '$message_text' }
+        }
+    },
+    {
+        $project: {
+           
+            message_text: 1
+        }
+    }
+  ]);
+
+  console.log('====================================');
+  console.log(messagList);
+  console.log('====================================');
+
 
 });
 
