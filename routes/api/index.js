@@ -525,6 +525,10 @@ router.post('/login', (req, res) => {
 router.post('/logout', passport.authenticate('jwt', {session : false}), (req,res) => {
 
 UserActivity.remove({ user: req.user.id}, (err) => {
+  pusher.trigger("events-channel", "check-logged-in", {
+    status: 0,
+    user_id: req.user.id
+  });
   return res.json({
     success: true,
     code:200,
