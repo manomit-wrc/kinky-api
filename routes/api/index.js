@@ -2655,10 +2655,27 @@ if(messagList){
 });
 router.post('/message_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
-  const messagList = await Message.find({to_user:req.user.id}).aggregate;
-  console.log('====================================');
-  console.log(messagList);
-  console.log('====================================');
+  // const messagList =  await Message.find({ $or:[ {'from_user':req.user.id}, {'to_user':req.user.id} ] });
+  // console.log('====================================');
+  // //console.log(messagList);
+  // let messageArr = [];
+  // for(let i = 0; i < messagList.length; i++) {
+  //   const tempArr = messageArr.filter( item => item.from_user === messagList[i].from_user || item.to_user === messagList[i].to_user)
+  //   console.log(tempArr.length);
+  // }
+  // console.log('====================================');
+
+  const messageList = await Message.find({ requested_id: req.user.id}).populate('to_user').sort('to_user').sort('requested_add');
+  let messageArr = [];
+  let tempVar = '';
+  for(let i = 0; i < messageList.length; i++) {
+    if(messageList[i].to_user.username !== tempVar) {
+      messageArr.push(messageList[i]);
+      tempVar = messageList[i].to_user.username;
+    }
+  }
+
+  console.log(messageArr);
 
 
 });
@@ -3506,5 +3523,6 @@ var search_states = function(countries, country) {
 
     return age;
 }
+
 module.exports = router;
 
