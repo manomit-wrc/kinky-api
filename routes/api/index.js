@@ -2651,7 +2651,7 @@ if(messagList){
 });
 router.post('/message_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
-  const messagList = await Message.find({to_user:req.user.id});
+  const messagList = await Message.find({to_user:req.user.id}).aggregate;
   console.log('====================================');
   console.log(messagList);
   console.log('====================================');
