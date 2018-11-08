@@ -2651,10 +2651,13 @@ if(messagList){
 });
 router.post('/message_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
-  const messagList = await Message.find({to_user:req.user.id}).aggregate;
-  console.log('====================================');
-  console.log(messagList);
-  console.log('====================================');
+  Message.find({ $or:[ {'from_user':req.user.id}, {'to_user':req.user.id} ] }).then(user => {
+
+    console.log('====================================');
+    console.log(user);
+    console.log('====================================');
+
+  });
 
 
 });
