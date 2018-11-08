@@ -48,8 +48,8 @@ const pusher = new Pusher({
 });
 
 var s3 = new AWS.S3({
-  accessKeyId: process.env.accessKeyId,
-  secretAccessKey: process.env.secretAccessKey
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
 })
 
 var upload = multer({
@@ -2651,7 +2651,7 @@ if(messagList){
 });
 router.post('/message_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
-  const messagList = await Message.find({to_user:req.user.id});
+  const messagList = await Message.find({to_user:req.user.id}).aggregate;
   console.log('====================================');
   console.log(messagList);
   console.log('====================================');
