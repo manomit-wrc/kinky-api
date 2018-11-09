@@ -2655,29 +2655,50 @@ if(messagList){
 });
 router.post('/message_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
-  // const messagList =  await Message.find({ $or:[ {'from_user':req.user.id}, {'to_user':req.user.id} ] });
-  // console.log('====================================');
-  // //console.log(messagList);
-  // let messageArr = [];
-  // for(let i = 0; i < messagList.length; i++) {
-  //   const tempArr = messageArr.filter( item => item.from_user === messagList[i].from_user || item.to_user === messagList[i].to_user)
-  //   console.log(tempArr.length);
-  // }
-  // console.log('====================================');
 
-  const messageList = await Message.find({ requested_id: req.user.id}).populate('to_user').sort('to_user').sort('requested_add');
-  let messageArr = [];
-  let tempVar = '';
-  for(let i = 0; i < messageList.length; i++) {
-    if(messageList[i].to_user.username !== tempVar) {
-      messageArr.push(messageList[i]);
-      tempVar = messageList[i].to_user.username;
-    }
-  }
+  const messageFromList = await Message.aggregate([
+    { "$match": { "requested_id": new mongoose.Types.ObjectId(req.user.id )  } },
+    { "$group": {
+      "_id": "$to_user",
+      "message_text": { "$last": "$message_text" },
+      "requested_add": { "$last": "$requested_add" }
+    }},
+    {
+      "$lookup": {
+          "from": "users",
+          "localField": "_id",
+          "foreignField": "_id",
+          "as": "to_user"
+      }
+    },
+    { "$sort": { "requested_add": -1 } },
+  ])
 
-  console.log(messageArr);
-
-
+  let toUserIds = messageFromList.map(item => item._id);
+  const messageToList = await Message.aggregate([
+    { "$match": { "requested_id": { "$ne": new mongoose.Types.ObjectId(req.user.id ) }, "from_user": { "$nin": toUserIds } } },
+    { "$group": {
+      "_id": "$from_user",
+      "message_text": { "$last": "$message_text" },
+      "requested_add": { "$last": "$requested_add" }
+    }},
+    {
+      "$lookup": {
+          "from": "users",
+          "localField": "_id",
+          "foreignField": "_id",
+          "as": "to_user"
+      }
+    },
+    { "$sort": { "requested_add": -1 } },
+  ])
+ 
+  const finalMessageList = [...messageFromList, ...messageToList];
+  return res.json({
+    success: true,
+    code: 200,
+    messageList: finalMessageList
+  })
 });
 
 router.post('/saveToLikes', passport.authenticate('jwt', { session : false }), async (req, res) => {
