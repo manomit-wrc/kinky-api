@@ -2653,6 +2653,28 @@ if(messagList){
   
 
 });
+
+router.post('/removeAllMesasage', passport.authenticate('jwt', { session : false }), async (req, res) => {
+
+  const messagList = await Message.remove({
+    $or: [
+        { $and: [{to_user: req.user.id}, {from_user: req.body.id}] },
+        { $and: [{from_user: req.user.id}, {to_user: req.body.id}] }
+    ]
+  }).then( doc => {
+
+    return res.json({
+      success: true,
+      code: 200
+    });
+    
+  });
+  
+
+  
+
+});
+
 router.post('/message_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
 
 
