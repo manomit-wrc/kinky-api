@@ -3414,6 +3414,22 @@ router.post('/friends_request_count', passport.authenticate('jwt', { session : f
     
 
 });
+router.post('/friends_request_count', passport.authenticate('jwt', { session : false }), (req, res) => {
+
+  
+  Friendrequest.find({to_user: req.user.id, status: { $ne: 1 }}).count(function(err,countData){
+
+    return res.json({
+      success: true,
+      count: countData,
+      code: 200
+    });
+
+
+});
+    
+
+});
 
 router.post('/friends_request_count', passport.authenticate('jwt', { session: false}), (req, res) => {
 
@@ -3424,6 +3440,18 @@ router.post('/friends_request_count', passport.authenticate('jwt', { session: fa
       code: 200
     });
   });
+
+});
+router.post('/post_details_by_url', passport.authenticate('jwt', { session: false}), async(req, res) => {
+const url = 'https://kinky-wrc.s3.amazonaws.com/images/1541671208824.jpg';
+
+const user = await Post.find({ content: url }).populate("user").populate('comments.comments_by');
+
+ return res.json({
+  success: true,
+  info: user,
+  code: 200
+});
 
 });
 
@@ -3492,6 +3520,19 @@ const post = await Post.find({user_distance: {$lte: parseInt(user[0].distance)}}
 router.post('/post_list_by_user', passport.authenticate('jwt', { session : false }), async (req, res) => {
   
 const post = await Post.find({user:req.body.id}).populate('user').populate('comments.comments_by');
+
+  if(post){
+    return res.json({
+      success: true,
+      info: post,
+      code: 200
+    });
+   } 
+
+});
+router.post('/post_list_by_id', passport.authenticate('jwt', { session : false }), async (req, res) => {
+  
+const post = await Post.find({_id:req.body.id}).populate('user').populate('comments.comments_by');
 
   if(post){
     return res.json({
