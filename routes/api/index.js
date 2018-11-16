@@ -28,10 +28,13 @@ const im = require('imagemagick');
 const PasswordChangeRequests = require('../../models/PasswordChangeRequests');
 const _ = require('lodash');
 const mongoose = require('mongoose');
+const nudity = require('nudity');
 
 const CountryList = require('../../config/countries.json');
 const Post = require('../../models/Post');
 const Message = require('../../models/Message');
+const fs = require('fs');
+const sightengine = require('sightengine')(`${process.env.SIGHT_ENGINE_USER}`, `${process.env.SIGHT_ENGINE_SECRET}`);
 
 //for sending email
 const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb8', 'fde7e8364b2ba00150f43eae0851cc85');
@@ -3579,6 +3582,33 @@ router.post("/check-loggedin", passport.authenticate('jwt', { session : false })
     });
   }
   return res.json({ success: true });
+})
+
+router.get("/check-image-nudity", (req, res) => {
+  /********** Do not use this library for kinky. It will describe any image as nude if that 
+   * image has any kind of expose.
+   */
+  nudity.scanFile("public/xxx.jpg", (err, result) => {
+    console.log(err);
+    console.log(result);
+  })
+});
+
+router.get("/check-image-nudity-new", (req, res) => {
+  /*************Again worthless */
+  sightengine.check(['nudity']).set_url("https://www.worldblaze.in/wp-content/uploads/2016/11/Sunny-Leone.jpg")
+    .then(result => {
+      console.log(result)
+      if(result.nudity.safe >= result.nudity.partial && result.nudity.safe >= result.nudity.raw) {
+        console.log("Not Nude");
+      }
+      else if(result.nudity.partial > result.nudity.raw) {
+        console.log("Not Nude");
+      }
+      else {
+        console.log("Nude");
+      }
+    })
 })
 
 
