@@ -62,6 +62,7 @@ const userSchema = new Schema({
     images: [
         {
             url: { type: String },
+            org_url:{type:String},
             altTag: { type: String },
             access: { type: String, default: 'Private'}
         }

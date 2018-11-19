@@ -61,6 +61,14 @@ var upload = multer({
       cb(null, /^image/i.test(file.mimetype))
     },
     transforms: [{
+      id: 'original',
+      key: function (req, file, cb) {
+        cb(null, `${Date.now().toString()}_original.jpg`)
+      },
+      transform: function (req, file, cb) {
+        cb(null, sharp().jpeg())
+      }
+    },{
       id: 'thumbnail',
       key: function (req, file, cb) {
         cb(null, `${Date.now().toString()}.jpg`)
@@ -1872,9 +1880,10 @@ router.post('/load-cities', (req, res) => {
 router.post('/upload-profile-image', upload.any('images'), passport.authenticate('jwt', { session : false }), (req, res) => {
      var imageData = [];
      for(let i = 0; i < req.files.length; i++) {
-        
+   
         imageData.push({
           url: req.files[i].transforms[0].location,
+          org_url:req.files[i].transforms[1].location,
           altTag: req.files[i].transforms[0].key,
           access: 'Private'
         })
@@ -3541,6 +3550,74 @@ const post = await Post.find({_id:req.body.id}).populate('user').populate('comme
       code: 200
     });
    } 
+
+});
+router.post('/post_list_by_filter', passport.authenticate('jwt', { session : false }), async (req, res) => {
+  //post_visible,sexuality_visible,content_visible
+  /* let post;
+  if(req.body.post_visible == '1' && req.body.sexuality_visible =='1' && req.body.content_visible=="1"){
+
+    let post = await Post.find({user_distance: {$lte: parseInt(user[0].distance)}}).populate('user').populate('comments.comments_by');
+
+  }else if(req.body.post_visible == '1' && req.body.sexuality_visible =='1' && req.body.content_visible=="2"){
+    
+
+  }else if(req.body.post_visible == '1' && req.body.sexuality_visible =='1' && req.body.content_visible=="3"){
+  
+
+  }else if(req.body.post_visible == '1' && req.body.sexuality_visible =='2' && req.body.content_visible=="1"){
+  
+
+  }else if(req.body.post_visible == '1' && req.body.sexuality_visible =='2' && req.body.content_visible=="2"){
+  
+
+  }else if(req.body.post_visible == '1' && req.body.sexuality_visible =='2' && req.body.content_visible=="3"){
+  
+
+  }else if(req.body.post_visible == '2' && req.body.sexuality_visible =='1' && req.body.content_visible=="1"){
+  
+
+  }else if(req.body.post_visible == '2' && req.body.sexuality_visible =='1' && req.body.content_visible=="2"){
+  
+
+  }else if(req.body.post_visible == '2' && req.body.sexuality_visible =='1' && req.body.content_visible=="3"){
+  
+
+  }else if(req.body.post_visible == '2' && req.body.sexuality_visible =='2' && req.body.content_visible=="1"){
+  
+
+  }else if(req.body.post_visible == '2' && req.body.sexuality_visible =='2' && req.body.content_visible=="2"){
+  
+
+  }else if(req.body.post_visible == '2' && req.body.sexuality_visible =='2' && req.body.content_visible=="3"){
+  
+
+  }else if(req.body.post_visible == '3' && req.body.sexuality_visible =='1' && req.body.content_visible=="1"){
+  
+
+  }else if(req.body.post_visible == '3' && req.body.sexuality_visible =='1' && req.body.content_visible=="2"){
+  
+
+  }else if(req.body.post_visible == '3' && req.body.sexuality_visible =='1' && req.body.content_visible=="3"){
+  
+
+  }else if(req.body.post_visible == '3' && req.body.sexuality_visible =='2' && req.body.content_visible=="1"){
+  
+
+  }else if(req.body.post_visible == '3' && req.body.sexuality_visible =='2' && req.body.content_visible=="2"){
+  
+
+  }else if(req.body.post_visible == '3' && req.body.sexuality_visible =='2' && req.body.content_visible=="3"){
+  
+  } */
+ /*  const post = await Post.find({user_distance: {$lte: parseInt(user[0].distance)}}).populate('user').populate('comments.comments_by');
+    if(post){
+      return res.json({
+        success: true,
+        info: post,
+        code: 200
+      });
+     }  */
 
 });
 
