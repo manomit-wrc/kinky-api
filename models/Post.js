@@ -16,6 +16,7 @@ const PostSchema = new Schema({
          }
 ],
     content:{type:String},
+    org_content:{type:String},
     content_type:{type:String}
 });
 

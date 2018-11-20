@@ -32,6 +32,7 @@ const mongoose = require('mongoose');
 const CountryList = require('../../config/countries.json');
 const Post = require('../../models/Post');
 const Message = require('../../models/Message');
+var nude = require('nude');
 
 //for sending email
 const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb8', 'fde7e8364b2ba00150f43eae0851cc85');
@@ -1880,13 +1881,17 @@ router.post('/load-cities', (req, res) => {
 router.post('/upload-profile-image', upload.any('images'), passport.authenticate('jwt', { session : false }), (req, res) => {
      var imageData = [];
      for(let i = 0; i < req.files.length; i++) {
-   
+     
         imageData.push({
           url: req.files[i].transforms[0].location,
           org_url:req.files[i].transforms[1].location,
           altTag: req.files[i].transforms[0].key,
           access: 'Private'
         })
+
+        nude.scan(req.files[i].transforms[1].location, function(res) {
+          console.log('Contains nudity: ' + res);
+        });
      }
   
   User.findByIdAndUpdate(
@@ -3476,6 +3481,7 @@ router.post('/post_description', passport.authenticate('jwt', { session : false 
     user_distance:parseInt(user[0].distance),
     description: req.body.post_description,
     content:req.body.url !=null ?req.body.url:'',
+    org_content:req.body.org_url !=null ?req.body.org_url:'',
     content_type:req.body.type !=''?req.body.type:''
   });
 
