@@ -32,7 +32,8 @@ const mongoose = require('mongoose');
 const CountryList = require('../../config/countries.json');
 const Post = require('../../models/Post');
 const Message = require('../../models/Message');
-var nude = require('nude');
+const fs = require('fs');
+const sightengine = require('sightengine')(`${process.env.SIGHT_ENGINE_USER}`, `${process.env.SIGHT_ENGINE_SECRET}`);
 
 //for sending email
 const Mailjet = require('node-mailjet').connect('f6419360e64064bc8ea8c4ea949e7eb8', 'fde7e8364b2ba00150f43eae0851cc85');
@@ -1878,21 +1879,28 @@ router.post('/load-cities', (req, res) => {
   });
 })
 
-router.post('/upload-profile-image', upload.any('images'), passport.authenticate('jwt', { session : false }), (req, res) => {
+router.post('/upload-profile-image', upload.any('images'), passport.authenticate('jwt', { session : false }),  async(req, res) => {
      var imageData = [];
+        var i_d = "";
      for(let i = 0; i < req.files.length; i++) {
-     
+     var nudity_check = await sightengine.check(['nudity']).set_url(req.files[i].transforms[1].location);
+
+        if(nudity_check.nudity.raw >=0.9){
+          i_d= 1;
+        }else{
+          i_d = 0;
+        }
         imageData.push({
           url: req.files[i].transforms[0].location,
           org_url:req.files[i].transforms[1].location,
+          isNude:i_d,
           altTag: req.files[i].transforms[0].key,
           access: 'Private'
         })
 
-        nude.scan(req.files[i].transforms[1].location, function(res) {
-          console.log('Contains nudity: ' + res);
-        });
      }
+
+
   
   User.findByIdAndUpdate(
     req.user.id,
@@ -3168,6 +3176,19 @@ router.post('/accept', passport.authenticate('jwt', { session : false }), async 
   const to_id = req.user.id;
   const from_id = req.body.from_id;
 
+  
+ User.findOneAndUpdate(
+  { _id: req.body.from_id }, 
+  { $push: { allfriends: new mongoose.Types.ObjectId(req.user.id)} },
+ function (error, success) {
+
+ });
+ User.findOneAndUpdate(
+  { _id: req.user.id }, 
+  { $push: { allfriends: new mongoose.Types.ObjectId(req.body.from_id)} },
+ function (error, success) {
+
+ });
   const user = await Friendrequest.findOne({from_user:from_id,to_user:to_id});
 
   user.status = 1;
@@ -3248,6 +3269,8 @@ router.post('/hot_list', passport.authenticate('jwt', { session : false }), asyn
      
 
 });
+
+
 router.post('/hot_list_by_user', passport.authenticate('jwt', { session : false }), async (req, res) => {
  const user_list=[];
  const user = await User.findById(req.body.id);
@@ -3482,6 +3505,7 @@ router.post('/post_description', passport.authenticate('jwt', { session : false 
     description: req.body.post_description,
     content:req.body.url !=null ?req.body.url:'',
     org_content:req.body.org_url !=null ?req.body.org_url:'',
+    content_nudity:req.body.isNude !=null ?req.body.isNude:'',
     content_type:req.body.type !=''?req.body.type:''
   });
 
@@ -3560,70 +3584,134 @@ const post = await Post.find({_id:req.body.id}).populate('user').populate('comme
 });
 router.post('/post_list_by_filter', passport.authenticate('jwt', { session : false }), async (req, res) => {
   //post_visible,sexuality_visible,content_visible
-  /* let post;
+  let post;
   if(req.body.post_visible == '1' && req.body.sexuality_visible =='1' && req.body.content_visible=="1"){
 
-    let post = await Post.find({user_distance: {$lte: parseInt(user[0].distance)}}).populate('user').populate('comments.comments_by');
+     post = await Post.find().populate('user').populate('comments.comments_by');
 
   }else if(req.body.post_visible == '1' && req.body.sexuality_visible =='1' && req.body.content_visible=="2"){
     
+    post = await Post.find({content_type:'image'}).populate('user').populate('comments.comments_by');
 
   }else if(req.body.post_visible == '1' && req.body.sexuality_visible =='1' && req.body.content_visible=="3"){
-  
+
+    post = await Post.find({ "$nor": [
+      {"content_type": "image"},
+      {"content_type": "video"}
+    ]}).populate('user').populate('comments.comments_by');
 
   }else if(req.body.post_visible == '1' && req.body.sexuality_visible =='2' && req.body.content_visible=="1"){
-  
+
+    post = await Post.find({content_nudity:1}).populate('user').populate('comments.comments_by');
 
   }else if(req.body.post_visible == '1' && req.body.sexuality_visible =='2' && req.body.content_visible=="2"){
   
+    post = await Post.find({content_nudity:1,content_type:'image'}).populate('user').populate('comments.comments_by');
 
   }else if(req.body.post_visible == '1' && req.body.sexuality_visible =='2' && req.body.content_visible=="3"){
   
+    post = await Post.find({content_nudity:1, "$nor": [
+      {"content_type": "image"},
+      {"content_type": "video"}
+    ]}).populate('user').populate('comments.comments_by');
+
 
   }else if(req.body.post_visible == '2' && req.body.sexuality_visible =='1' && req.body.content_visible=="1"){
-  
+    const user = await User.find({_id:req.user.id});
+
+     user[0].allfriends.push(req.user.id);
+    
+   post = await Post.find({user: { "$in" :user[0].allfriends} }).populate('user').populate('comments.comments_by');
+
 
   }else if(req.body.post_visible == '2' && req.body.sexuality_visible =='1' && req.body.content_visible=="2"){
   
+    const user = await User.find({_id:req.user.id});
+
+     user[0].allfriends.push(req.user.id);
+    
+   post = await Post.find({user: { "$in" :user[0].allfriends},content_type:'image'}).populate('user').populate('comments.comments_by');
+
 
   }else if(req.body.post_visible == '2' && req.body.sexuality_visible =='1' && req.body.content_visible=="3"){
   
+    const user = await User.find({_id:req.user.id});
+
+     user[0].allfriends.push(req.user.id);
+    
+   post = await Post.find({user: { "$in" :user[0].allfriends},"$nor": [
+      {"content_type": "image"},
+      {"content_type": "video"}
+    ]}).populate('user').populate('comments.comments_by');
 
   }else if(req.body.post_visible == '2' && req.body.sexuality_visible =='2' && req.body.content_visible=="1"){
   
+    const user = await User.find({_id:req.user.id});
+
+     user[0].allfriends.push(req.user.id);
+    
+   post = await Post.find({user: { "$in" :user[0].allfriends},content_nudity:1}).populate('user').populate('comments.comments_by');
 
   }else if(req.body.post_visible == '2' && req.body.sexuality_visible =='2' && req.body.content_visible=="2"){
+  
+      const user = await User.find({_id:req.user.id});
+
+     user[0].allfriends.push(req.user.id);
+    
+   post = await Post.find({user: { "$in" :user[0].allfriends},content_nudity:1,content_type:'image'}).populate('user').populate('comments.comments_by');
   
 
   }else if(req.body.post_visible == '2' && req.body.sexuality_visible =='2' && req.body.content_visible=="3"){
   
+      const user = await User.find({_id:req.user.id});
+
+     user[0].allfriends.push(req.user.id);
+    
+   post = await Post.find({user: { "$in" :user[0].allfriends},content_nudity:1,"$nor": [
+      {"content_type": "image"},
+      {"content_type": "video"}
+    ]}).populate('user').populate('comments.comments_by');
 
   }else if(req.body.post_visible == '3' && req.body.sexuality_visible =='1' && req.body.content_visible=="1"){
   
+    post = await Post.find({user:req.user.id}).populate('user').populate('comments.comments_by');
 
   }else if(req.body.post_visible == '3' && req.body.sexuality_visible =='1' && req.body.content_visible=="2"){
   
+    post = await Post.find({user:req.user.id,content_type:'image'}).populate('user').populate('comments.comments_by');
 
   }else if(req.body.post_visible == '3' && req.body.sexuality_visible =='1' && req.body.content_visible=="3"){
   
+    post = await Post.find({user:req.user.id,"$nor": [
+      {"content_type": "image"},
+      {"content_type": "video"}
+    ]}).populate('user').populate('comments.comments_by');
 
   }else if(req.body.post_visible == '3' && req.body.sexuality_visible =='2' && req.body.content_visible=="1"){
   
+    post = await Post.find({user:req.user.id,content_nudity:1}).populate('user').populate('comments.comments_by');
 
   }else if(req.body.post_visible == '3' && req.body.sexuality_visible =='2' && req.body.content_visible=="2"){
   
+    post = await Post.find({user:req.user.id,content_nudity:1,content_type:'image'}).populate('user').populate('comments.comments_by');
 
   }else if(req.body.post_visible == '3' && req.body.sexuality_visible =='2' && req.body.content_visible=="3"){
+
+    post = await Post.find({user:req.user.id,content_nudity:1, "$nor": [
+      {"content_type": "image"},
+      {"content_type": "video"}
+    ]}).populate('user').populate('comments.comments_by');
   
-  } */
- /*  const post = await Post.find({user_distance: {$lte: parseInt(user[0].distance)}}).populate('user').populate('comments.comments_by');
+  }
+
     if(post){
-      return res.json({
+       return res.json({
         success: true,
         info: post,
         code: 200
-      });
-     }  */
+      }); 
+      
+     } 
 
 });
 
@@ -3664,6 +3752,42 @@ router.post("/check-loggedin", passport.authenticate('jwt', { session : false })
   return res.json({ success: true });
 })
 
+/* router.get("/check-image-nudity", (req, res) => {
+  /********** Do not use this library for kinky. It will describe any image as nude if that 
+   * image has any kind of expose.
+  
+  nudity.scanFile("public/xxx.jpg", (err, result) => {
+    console.log(err);
+    console.log(result);
+  })
+}); */
+
+router.get("/check-image-nudity-new", (req, res) => {
+  /*************Again worthless */
+  sightengine.check(['nudity']).set_url("http://babeshowpromo.co.uk/promo/images/gallery/preetiandpriya/28/photos/preetiandpriya-001.jpg")
+    .then(result => {
+
+      if(result.nudity.raw >=0.9){
+        console.log("Nude");
+      }else{
+        console.log("Not Nude");
+      }
+
+    })
+})
+
+/* function nuDity(url){
+  sightengine.check(['nudity']).set_url(url)
+  .then(result => {
+console.log(result);
+    if(result.nudity.raw >=0.9){
+       return 1;
+    }else{
+       return 0;
+    }
+ 
+  })
+} */
 
 function diff_years(dt2, dt1) 
 {

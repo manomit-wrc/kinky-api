@@ -63,6 +63,7 @@ const userSchema = new Schema({
         {
             url: { type: String },
             org_url:{type:String},
+            isNude:{type:String},
             altTag: { type: String },
             access: { type: String, default: 'Private'}
         }
@@ -83,6 +84,10 @@ const userSchema = new Schema({
             response_date: { type: Date }
         }
     ],
+    allfriends: [
+        { type: Schema.Types.ObjectId, ref: 'User' }
+       
+   ],
     hotlist: [
          { type: Schema.Types.ObjectId, ref: 'User' }
         
