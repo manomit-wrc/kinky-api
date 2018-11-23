@@ -3480,9 +3480,8 @@ router.post('/friends_request_count', passport.authenticate('jwt', { session: fa
 
 });
 router.post('/post_details_by_url', passport.authenticate('jwt', { session: false}), async(req, res) => {
-const url = 'https://kinky-wrc.s3.amazonaws.com/images/1541671208824.jpg';
 
-const user = await Post.find({ content: url }).populate("user").populate('comments.comments_by');
+const user = await Post.find({ org_content: req.body.id }).populate("user").populate('comments.comments_by');
 
  return res.json({
   success: true,
