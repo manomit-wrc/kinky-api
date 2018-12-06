@@ -3037,7 +3037,7 @@ table.center-on-narrow {
 }
 }
 
-</style>
+</style>  
 
 
 </head>
@@ -3532,7 +3532,7 @@ router.post('/review_list', passport.authenticate('jwt', { session: false}), asy
     });
   }
 
-
+  
 });
 
 

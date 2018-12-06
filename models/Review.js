@@ -11,4 +11,4 @@ const ReviewSchema = new Schema({
     requested_id: { type: Schema.Types.ObjectId , ref: 'User'},
 });
 
-module.exports = mongoose.model('Review', ReviewSchema);
+module.exports = mongoose.model('Review', ReviewSchema); 
