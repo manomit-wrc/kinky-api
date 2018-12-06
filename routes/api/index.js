@@ -31,6 +31,7 @@ const mongoose = require('mongoose');
 
 const CountryList = require('../../config/countries.json');
 const Post = require('../../models/Post');
+const ReviewSchema = require('../../models/Review');
 const Message = require('../../models/Message');
 const fs = require('fs');
 const sightengine = require('sightengine')(`${process.env.SIGHT_ENGINE_USER}`, `${process.env.SIGHT_ENGINE_SECRET}`);
@@ -2640,7 +2641,10 @@ router.post('/submit_message', passport.authenticate('jwt', { session : false })
     to_user : req.body.id,
     requested_add : new Date(),
     requested_id:req.user.id,
-    message_text: req.body.message
+    message_text: req.body.message,
+    content:req.body.content,
+    org_content:req.body.org_content,
+    content_type:req.body.content_type
   });
 
   if(sendMessage.save()){
@@ -3491,6 +3495,46 @@ const user = await Post.find({ org_content: req.body.id }).populate("user").popu
 
 });
 
+router.post('/review_post', passport.authenticate('jwt', { session: false}), async(req, res) => {
+
+  const from_id = req.user.id;
+  const to_id = req.body.to_id;
+
+  const saveReview = new ReviewSchema({
+    from_user : from_id,
+    to_user : to_id,
+    requested_add : new Date(),
+    requested_id:from_id,
+    comment: req.body.review
+  });
+
+  if(saveReview.save()){
+    //const reviewList = await ReviewSchema.find({to_user:to_id});
+    return res.json({
+      success: true,
+      code: 200
+    });
+  }
+
+
+
+});
+router.post('/review_list', passport.authenticate('jwt', { session: false}), async(req, res) => {
+  const to_id = req.body.to_id;
+  const reviewList = await ReviewSchema.find({to_user:to_id}).populate('from_user');
+
+  if(reviewList){
+
+    return res.json({
+      success: true,
+      info: reviewList,
+      code: 200
+    });
+  }
+
+
+});
+
 
 
 router.post('/post_description', passport.authenticate('jwt', { session : false }), async (req, res) => {
@@ -3543,9 +3587,16 @@ router.post('/post_comment', passport.authenticate('jwt', { session : false }), 
 
 });
 router.post('/post_list', passport.authenticate('jwt', { session : false }), async (req, res) => {
-
+  var post;
   const user = await Settings.find({user:req.user.id});
-const post = await Post.find({user_distance: {$lte: parseInt(user[0].distance)}}).populate('user').populate('comments.comments_by');
+  if(user[0].explicit_content == true){
+  
+     post = await Post.find({user_distance: {$lte: parseInt(user[0].distance)}}).populate('user').populate('comments.comments_by');
+  }else{
+
+     post = await Post.find({user_distance: {$lte: parseInt(user[0].distance)},content_nudity:0}).populate('user').populate('comments.comments_by');
+  }
+  
   if(post){
     return res.json({
       success: true,
@@ -3601,15 +3652,15 @@ router.post('/post_list_by_filter', passport.authenticate('jwt', { session : fal
 
   }else if(req.body.post_visible == '1' && req.body.sexuality_visible =='2' && req.body.content_visible=="1"){
 
-    post = await Post.find({content_nudity:1}).populate('user').populate('comments.comments_by');
+    post = await Post.find({content_nudity:0}).populate('user').populate('comments.comments_by');
 
   }else if(req.body.post_visible == '1' && req.body.sexuality_visible =='2' && req.body.content_visible=="2"){
   
-    post = await Post.find({content_nudity:1,content_type:'image'}).populate('user').populate('comments.comments_by');
+    post = await Post.find({content_nudity:0,content_type:'image'}).populate('user').populate('comments.comments_by');
 
   }else if(req.body.post_visible == '1' && req.body.sexuality_visible =='2' && req.body.content_visible=="3"){
   
-    post = await Post.find({content_nudity:1, "$nor": [
+    post = await Post.find({content_nudity:0, "$nor": [
       {"content_type": "image"},
       {"content_type": "video"}
     ]}).populate('user').populate('comments.comments_by');
@@ -3649,7 +3700,7 @@ router.post('/post_list_by_filter', passport.authenticate('jwt', { session : fal
 
      user[0].allfriends.push(req.user.id);
     
-   post = await Post.find({user: { "$in" :user[0].allfriends},content_nudity:1}).populate('user').populate('comments.comments_by');
+   post = await Post.find({user: { "$in" :user[0].allfriends},content_nudity:0}).populate('user').populate('comments.comments_by');
 
   }else if(req.body.post_visible == '2' && req.body.sexuality_visible =='2' && req.body.content_visible=="2"){
   
@@ -3657,7 +3708,7 @@ router.post('/post_list_by_filter', passport.authenticate('jwt', { session : fal
 
      user[0].allfriends.push(req.user.id);
     
-   post = await Post.find({user: { "$in" :user[0].allfriends},content_nudity:1,content_type:'image'}).populate('user').populate('comments.comments_by');
+   post = await Post.find({user: { "$in" :user[0].allfriends},content_nudity:0,content_type:'image'}).populate('user').populate('comments.comments_by');
   
 
   }else if(req.body.post_visible == '2' && req.body.sexuality_visible =='2' && req.body.content_visible=="3"){
@@ -3666,7 +3717,7 @@ router.post('/post_list_by_filter', passport.authenticate('jwt', { session : fal
 
      user[0].allfriends.push(req.user.id);
     
-   post = await Post.find({user: { "$in" :user[0].allfriends},content_nudity:1,"$nor": [
+   post = await Post.find({user: { "$in" :user[0].allfriends},content_nudity:0,"$nor": [
       {"content_type": "image"},
       {"content_type": "video"}
     ]}).populate('user').populate('comments.comments_by');
@@ -3688,15 +3739,15 @@ router.post('/post_list_by_filter', passport.authenticate('jwt', { session : fal
 
   }else if(req.body.post_visible == '3' && req.body.sexuality_visible =='2' && req.body.content_visible=="1"){
   
-    post = await Post.find({user:req.user.id,content_nudity:1}).populate('user').populate('comments.comments_by');
+    post = await Post.find({user:req.user.id,content_nudity:0}).populate('user').populate('comments.comments_by');
 
   }else if(req.body.post_visible == '3' && req.body.sexuality_visible =='2' && req.body.content_visible=="2"){
   
-    post = await Post.find({user:req.user.id,content_nudity:1,content_type:'image'}).populate('user').populate('comments.comments_by');
+    post = await Post.find({user:req.user.id,content_nudity:0,content_type:'image'}).populate('user').populate('comments.comments_by');
 
   }else if(req.body.post_visible == '3' && req.body.sexuality_visible =='2' && req.body.content_visible=="3"){
 
-    post = await Post.find({user:req.user.id,content_nudity:1, "$nor": [
+    post = await Post.find({user:req.user.id,content_nudity:0, "$nor": [
       {"content_type": "image"},
       {"content_type": "video"}
     ]}).populate('user').populate('comments.comments_by');
@@ -3713,6 +3764,57 @@ router.post('/post_list_by_filter', passport.authenticate('jwt', { session : fal
      } 
 
 });
+router.post('/user_post_list_by_filter', passport.authenticate('jwt', { session : false }), async (req, res) => {
+  //post_visible,sexuality_visible,content_visible
+  let post;
+  if( req.body.sexuality_visible =='1' && req.body.content_visible=="1"){
+
+     post = await Post.find({user:req.body.id}).populate('user').populate('comments.comments_by');
+
+  }else if(req.body.sexuality_visible =='1' && req.body.content_visible=="2"){
+    
+    post = await Post.find({user:req.body.id,content_type:'image'}).populate('user').populate('comments.comments_by');
+
+  }else if(req.body.sexuality_visible =='1' && req.body.content_visible=="3"){
+
+    post = await Post.find({user:req.body.id, "$nor": [
+      {"content_type": "image"},
+      {"content_type": "video"}
+    ]}).populate('user').populate('comments.comments_by');
+
+  }else if(req.body.sexuality_visible =='2' && req.body.content_visible=="1"){
+    
+   post = await Post.find({user:req.body.id,content_nudity:0}).populate('user').populate('comments.comments_by');
+
+  }else if(req.body.sexuality_visible =='2' && req.body.content_visible=="2"){
+
+    
+   post = await Post.find({user:req.body.id,content_nudity:0,content_type:'image'}).populate('user').populate('comments.comments_by');
+  
+
+  }else if(req.body.sexuality_visible =='2' && req.body.content_visible=="3"){
+  
+    
+   post = await Post.find({user:req.body.id,content_nudity:0,"$nor": [
+      {"content_type": "image"},
+      {"content_type": "video"}
+    ]}).populate('user').populate('comments.comments_by');
+
+  }
+
+    if(post){
+       return res.json({
+        success: true,
+        info: post,
+        code: 200
+      }); 
+      
+     } 
+
+});
+
+
+
 
 
 router.post("/change-image-details", passport.authenticate('jwt', { session : false }), async (req, res) => {

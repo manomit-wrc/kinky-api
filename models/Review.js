@@ -2,16 +2,13 @@ const mongoose = require('mongoose');
 
 const Schema = mongoose.Schema;
 
-const MessageSchema = new Schema({
+const ReviewSchema = new Schema({
     from_user: { type: Schema.Types.ObjectId , ref: 'User'},
     to_user: { type: Schema.Types.ObjectId , ref: 'User'},
     requested_add: { type: Date },
-    read_status: { type: Number,default:0},
-    message_text:{type:String},
-    content:{type:String},
-    org_content:{type:String},
-    content_type:{type:String},
+    response_add: { type: Date },
+    comment: { type: String},
     requested_id: { type: Schema.Types.ObjectId , ref: 'User'},
 });
 
-module.exports = mongoose.model('Message', MessageSchema);
+module.exports = mongoose.model('Review', ReviewSchema);
